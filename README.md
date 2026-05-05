@@ -21,7 +21,7 @@ npm install
 Crée le fichier `apps/api/.env` avec le contenu suivant (adapte les identifiants si besoin) :
 
 ```env
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/onepiecetcg-db?schema=public"
+DATABASE_URL="postgresql://<user>:<password>@localhost:5432/onepiecetcg-db?schema=public"
 ```
 
 Ce fichier est ignoré par git — ne jamais le committer.
