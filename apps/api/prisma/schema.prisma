@@ -1,0 +1,113 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Color {
+  Red
+  Blue
+  Green
+  Black
+  Yellow
+  Purple
+}
+
+enum CardType {
+  Leader
+  Character
+  Event
+  Stage
+}
+
+model Card {
+  id            String   @id @default(uuid())
+  code          String   @unique
+  name          String
+  setId         String
+  setName       String
+  type          CardType
+  colors        Color[]
+  cost          Int?
+  power         Int?
+  life          Int?
+  counterAmount Int?
+  attribute     String?
+  rarity        String
+  subTypes      String?
+  effect        String?
+  isDon         Boolean  @default(false)
+  updatedAt     DateTime @updatedAt
+
+  variants CardVariant[]
+  tags     CardTag[]
+  trigger  CardTrigger?
+}
+
+model CardVariant {
+  id             String  @id @default(uuid())
+  cardId         String
+  imageId        String  @unique
+  imageUrl       String
+  isPromo        Boolean @default(false)
+  isStarter      Boolean @default(false)
+  isAlternate    Boolean @default(false)
+  marketPrice    Float?
+  inventoryPrice Float?
+
+  card        Card       @relation(fields: [cardId], references: [id])
+  leaderDecks Deck[]     @relation("DeckLeader")
+  deckEntries DeckCard[] @relation("DeckEntries")
+}
+
+model CardTag {
+  id         Int    @id @default(autoincrement())
+  cardId     String
+  tag        String
+  source     String @default("llm")
+  confidence Float?
+
+  card Card @relation(fields: [cardId], references: [id])
+
+  @@unique([cardId, tag])
+}
+
+model CardTrigger {
+  id         Int      @id @default(autoincrement())
+  cardId     String   @unique
+  hasTrigger Boolean
+  effects    String[]
+  source     String   @default("llm")
+  confidence Float?
+
+  card Card @relation(fields: [cardId], references: [id])
+}
+
+model Deck {
+  id           Int      @id @default(autoincrement())
+  name         String
+  leaderId     String
+  leaderColors Color[]
+  description  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  leader   CardVariant @relation("DeckLeader", fields: [leaderId], references: [id])
+  deckList DeckCard[]
+}
+
+model DeckCard {
+  id        Int    @id @default(autoincrement())
+  deckId    Int
+  variantId String
+  quantity  Int    @default(1)
+
+  deck    Deck        @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  variant CardVariant @relation("DeckEntries", fields: [variantId], references: [id])
+
+  @@unique([deckId, variantId])
+}
