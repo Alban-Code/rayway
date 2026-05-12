@@ -1,7 +1,7 @@
 // dto/card-query.dto.ts
 import { IsOptional, IsEnum, IsInt, Min, IsArray, IsString } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
-import { Color, CardType } from "../../../generated/prisma/enums";
+import { Color, CardType } from "../../generated/prisma/enums";
 
 export class CardQueryDto {
     @IsOptional()

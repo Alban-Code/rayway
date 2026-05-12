@@ -4,7 +4,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { CreateDeckDto } from './dto/create-deck.dto';
 import { UpdateDeckDto } from './dto/update-deck.dto';
 import { AddCardDto } from './dto/add-card.dto';
-import { CardType } from '../../generated/prisma/enums';
+import { CardType } from '../generated/prisma/enums';
 
 @Injectable()
 export class DecksService {

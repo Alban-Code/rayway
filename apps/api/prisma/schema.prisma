@@ -1,12 +1,20 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// Generator & datasource
+// ─────────────────────────────────────────────────────────────────────────────
+
 generator client {
   provider     = "prisma-client"
-  output       = "../generated/prisma"
+  output       = "../src/generated/prisma"
   moduleFormat = "cjs"
 }
 
 datasource db {
   provider = "postgresql"
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Enums
+// ─────────────────────────────────────────────────────────────────────────────
 
 enum Color {
   Red
@@ -17,97 +25,395 @@ enum Color {
   Purple
 }
 
-enum CardType {
+enum Category {
   Leader
   Character
   Event
   Stage
+  Don
 }
 
+enum Attribute {
+  Slash
+  Strike
+  Ranged
+  Special
+  Wisdom
+}
+
+enum Rarity {
+  C
+  UC
+  R
+  SR
+  SEC
+  L
+  P
+  TR
+  SP
+}
+
+enum LegalityStatus {
+  Legal
+  Restricted
+  Limited
+  Banned
+}
+
+enum TagSource {
+  Llm
+  Human
+  Official
+}
+
+enum TagScope {
+  Main
+  Trigger
+}
+
+enum VariantType {
+  Regular // pas de suffixe : OP02-001
+  Parallel // _pN — alt-art classique
+  Reprint // _rN — réimpression alt-art (souvent style manga)
+}
+
+enum TagKind {
+  Keyword // mot-clé imprimé sur la carte (Rush, Blocker, Banish, Double Attack…)
+  Semantic // catégorie sémantique pour le RAG (searcher, drawer, board_wipe…)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Reference: languages
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Language {
+  code String @id // ISO 639-1 : "en", "fr", "ja", "de"…
+  name String
+
+  cardTranslations   CardTranslation[]
+  typeTranslations   TypeTranslation[]
+  tagTranslations    TagTranslation[]
+  formatTranslations FormatTranslation[]
+  variantImages      CardVariantImage[]
+  collectionItems    CollectionItem[]
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Users
+// ─────────────────────────────────────────────────────────────────────────────
+
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  displayName String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  decks           Deck[]
+  collectionItems CollectionItem[]
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Card sets (OP01, ST01, EB01…)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model CardSet {
+  id          String    @id @default(cuid())
+  code        String    @unique
+  name        String
+  releaseDate DateTime?
+  createdAt   DateTime  @default(now())
+
+  cards Card[]
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Cards (canonical) + translations + variants
+// ─────────────────────────────────────────────────────────────────────────────
+
 model Card {
-  id            String   @id @default(uuid())
-  code          String   @unique
-  name          String
-  setId         String
-  setName       String
-  type          CardType
+  id            String      @id @default(cuid())
+  code          String      @unique // ex: OP01-001
+  category      Category
   colors        Color[]
   cost          Int?
   power         Int?
   life          Int?
   counterAmount Int?
-  attribute     String?
-  rarity        String
-  subTypes      String?
-  effect        String?
-  isDon         Boolean  @default(false)
-  updatedAt     DateTime @updatedAt
+  attributes    Attribute[]
+  rarity        Rarity
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 
-  variants CardVariant[]
-  tags     CardTag[]
-  trigger  CardTrigger?
+  setId String
+  set   CardSet @relation(fields: [setId], references: [id])
+
+  translations CardTranslation[]
+  variants     CardVariant[]
+  types        CardType[]
+  tags         CardTag[]
+  legalities   FormatLegality[]
+
+  @@index([category])
+  @@index([setId])
+}
+
+model CardTranslation {
+  id            String  @id @default(cuid())
+  cardId        String
+  languageCode  String
+  name          String
+  effect        String?
+  triggerEffect String?
+  overridden    Boolean @default(false) // si true → l'ingestion ne touche plus cette row (fix manuel admin)
+
+  card     Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  language Language @relation(fields: [languageCode], references: [code])
+
+  @@unique([cardId, languageCode])
+  @@index([languageCode])
+  @@index([name])
 }
 
 model CardVariant {
-  id             String  @id @default(uuid())
+  id             String      @id @default(cuid())
   cardId         String
-  imageId        String  @unique
-  imageUrl       String
-  isPromo        Boolean @default(false)
-  isStarter      Boolean @default(false)
-  isAlternate    Boolean @default(false)
+  variantCode    String      @unique // ex: OP01-001_p1
+  variantType    VariantType @default(Regular)
+  isPromo        Boolean     @default(false) // dérivé de la rareté Promo
+  isStarter      Boolean     @default(false) // distribué dans un starter deck
   marketPrice    Float?
   inventoryPrice Float?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
 
-  card        Card       @relation(fields: [cardId], references: [id])
-  leaderDecks Deck[]     @relation("DeckLeader")
-  deckEntries DeckCard[] @relation("DeckEntries")
+  card        Card               @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  images      CardVariantImage[]
+  leaderDecks Deck[]             @relation("DeckLeader")
+  deckEntries DeckCard[]
+  collected   CollectionItem[]
+
+  @@index([cardId])
+  @@index([variantType])
+}
+
+model CardVariantImage {
+  id           String @id @default(cuid())
+  variantId    String
+  languageCode String
+  imageUrl     String
+
+  variant  CardVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  language Language    @relation(fields: [languageCode], references: [code])
+
+  @@unique([variantId, languageCode])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Types (Straw Hat Crew, Supernova, Wano Country…)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Type {
+  id   String @id @default(cuid())
+  code String @unique // ex: "straw-hat-crew"
+
+  translations TypeTranslation[]
+  cards        CardType[]
+}
+
+model TypeTranslation {
+  id           String  @id @default(cuid())
+  typeId       String
+  languageCode String
+  label        String
+  overridden   Boolean @default(false) // si true → l'ingestion ne touche plus cette row (fix manuel admin)
+
+  type     Type     @relation(fields: [typeId], references: [id], onDelete: Cascade)
+  language Language @relation(fields: [languageCode], references: [code])
+
+  @@unique([typeId, languageCode])
+}
+
+model CardType {
+  cardId String
+  typeId String
+  order  Int // position dans `types[]` du fichier source — permet aux passes non-EN de retrouver le bon Type par index, même hors du même run
+
+  card Card @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  type Type @relation(fields: [typeId], references: [id], onDelete: Cascade)
+
+  @@id([cardId, typeId])
+  @@unique([cardId, order])
+  @@index([typeId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Tags (semantic enrichment for RAG)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Tag {
+  id   String  @id @default(cuid())
+  code String  @unique // ex: "drawer", "searcher", "blocker"
+  kind TagKind @default(Semantic)
+
+  translations TagTranslation[]
+  cardTags     CardTag[]
+
+  @@index([kind])
+}
+
+model TagTranslation {
+  id           String  @id @default(cuid())
+  tagId        String
+  languageCode String
+  label        String
+  description  String?
+
+  tag      Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  language Language @relation(fields: [languageCode], references: [code])
+
+  @@unique([tagId, languageCode])
 }
 
 model CardTag {
-  id         Int    @id @default(autoincrement())
+  id         String    @id @default(cuid())
   cardId     String
-  tag        String
-  source     String @default("llm")
+  tagId      String
+  scope      TagScope  @default(Main)
+  source     TagSource @default(Llm)
   confidence Float?
+  createdAt  DateTime  @default(now())
 
-  card Card @relation(fields: [cardId], references: [id])
+  card Card @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
-  @@unique([cardId, tag])
+  @@unique([cardId, tagId, scope])
+  @@index([tagId, scope])
 }
 
-model CardTrigger {
-  id         Int      @id @default(autoincrement())
-  cardId     String   @unique
-  hasTrigger Boolean
-  effects    String[]
-  source     String   @default("llm")
-  confidence Float?
+// ─────────────────────────────────────────────────────────────────────────────
+// Formats & banlist (time-bounded)
+// ─────────────────────────────────────────────────────────────────────────────
 
-  card Card @relation(fields: [cardId], references: [id])
+model Format {
+  id        String   @id @default(cuid())
+  code      String   @unique // "standard", "world", "limited"
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  translations FormatTranslation[]
+  decks        Deck[]
+  legalities   FormatLegality[]
 }
+
+model FormatTranslation {
+  id           String  @id @default(cuid())
+  formatId     String
+  languageCode String
+  name         String
+  description  String?
+
+  format   Format   @relation(fields: [formatId], references: [id], onDelete: Cascade)
+  language Language @relation(fields: [languageCode], references: [code])
+
+  @@unique([formatId, languageCode])
+}
+
+model FormatLegality {
+  id          String         @id @default(cuid())
+  formatId    String
+  cardId      String
+  status      LegalityStatus @default(Legal)
+  maxCopies   Int? // override quand status = Restricted (1) / Limited (2)
+  reason      String?
+  effectiveAt DateTime       @default(now())
+  endsAt      DateTime?
+
+  format Format @relation(fields: [formatId], references: [id], onDelete: Cascade)
+  card   Card   @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@unique([formatId, cardId, effectiveAt])
+  @@index([cardId, formatId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Decks
+// ─────────────────────────────────────────────────────────────────────────────
 
 model Deck {
-  id           Int      @id @default(autoincrement())
-  name         String
-  leaderId     String
-  leaderColors Color[]
-  description  String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id              String   @id @default(cuid())
+  userId          String
+  formatId        String?
+  leaderVariantId String
+  name            String
+  description     String?
+  isPublic        Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  leader   CardVariant @relation("DeckLeader", fields: [leaderId], references: [id])
-  deckList DeckCard[]
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  format        Format?     @relation(fields: [formatId], references: [id])
+  leaderVariant CardVariant @relation("DeckLeader", fields: [leaderVariantId], references: [id])
+  cards         DeckCard[]
+
+  @@index([userId])
+  @@index([formatId])
 }
 
 model DeckCard {
-  id        Int    @id @default(autoincrement())
-  deckId    Int
+  id        String @id @default(cuid())
+  deckId    String
   variantId String
   quantity  Int    @default(1)
 
   deck    Deck        @relation(fields: [deckId], references: [id], onDelete: Cascade)
-  variant CardVariant @relation("DeckEntries", fields: [variantId], references: [id])
+  variant CardVariant @relation(fields: [variantId], references: [id])
 
   @@unique([deckId, variantId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// User collection (cartes physiques possédées)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model CollectionItem {
+  id           String   @id @default(cuid())
+  userId       String
+  variantId    String
+  languageCode String
+  quantity     Int      @default(1)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user     User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  variant  CardVariant @relation(fields: [variantId], references: [id])
+  language Language    @relation(fields: [languageCode], references: [code])
+
+  @@unique([userId, variantId, languageCode])
+  @@index([userId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Ingestion runs (audit + état d'incrémental)
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum IngestionStatus {
+  success
+  partial
+  failed
+}
+
+model IngestionRun {
+  id               String          @id @default(cuid())
+  source           String // "punk-records"
+  commitSha        String // SHA git du repo source au moment du run
+  status           IngestionStatus
+  startedAt        DateTime
+  finishedAt       DateTime
+  filesProcessed   Int             @default(0)
+  cardsUpserted    Int             @default(0)
+  variantsUpserted Int             @default(0)
+  errors           Int             @default(0)
+
+  @@index([source, status, finishedAt])
 }

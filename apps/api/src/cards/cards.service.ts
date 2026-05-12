@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../../prisma/prisma.service";
 import { CardQueryDto } from "./dto/card-query.dto";
-import { Prisma } from "../../generated/prisma/client";
+import { Prisma } from "../generated/prisma/client";
 
 @Injectable()
 export class CardsService {

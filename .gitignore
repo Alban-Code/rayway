@@ -11,7 +11,7 @@ build/
 .env.*.local
 
 # Prisma generated client
-apps/api/generated/
+apps/api/src/generated/
 
 # Logs
 *.log
