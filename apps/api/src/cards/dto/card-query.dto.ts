@@ -1,37 +1,51 @@
-// dto/card-query.dto.ts
-import { IsOptional, IsEnum, IsInt, Min, IsArray, IsString } from 'class-validator';
-import { Transform, Type } from 'class-transformer';
-import { Color, CardType } from "../../generated/prisma/enums";
+import { IsOptional, IsEnum, IsInt, Min, Max, IsArray, IsString, Length } from "class-validator";
+import { Transform, Type } from "class-transformer";
+import { ApiPropertyOptional } from "@nestjs/swagger";
+import { Category, Color } from "../../generated/prisma/enums";
 
 export class CardQueryDto {
     @IsOptional()
     @IsArray()
     @IsEnum(Color, { each: true })
     @Transform(({ value }) => (Array.isArray(value) ? value : [value]))
+    @ApiPropertyOptional({ enum: Color, isArray: true, example: ["Red", "Blue"] })
     colors?: Color[];
 
     @IsOptional()
-    @IsEnum(CardType)
-    type?: CardType;
+    @IsEnum(Category)
+    @ApiPropertyOptional({ enum: Category, example: "Leader" })
+    category?: Category;
 
     @IsOptional()
     @IsArray()
+    @IsString({ each: true })
     @Transform(({ value }) => (Array.isArray(value) ? value : [value]))
+    @ApiPropertyOptional({ type: String, isArray: true, example: ["drawer", "searcher"] })
     tags?: string[];
 
     @IsOptional()
     @IsString()
+    @ApiPropertyOptional({ description: "Recherche full-text sur le nom et l'effet" })
     q?: string;
+
+    @IsOptional()
+    @IsString()
+    @Length(2, 5)
+    @ApiPropertyOptional({ default: "en", example: "fr" })
+    lang?: string = "en";
 
     @IsOptional()
     @Type(() => Number)
     @IsInt()
     @Min(1)
+    @ApiPropertyOptional({ minimum: 1, default: 1 })
     page?: number = 1;
 
     @IsOptional()
     @Type(() => Number)
     @IsInt()
     @Min(1)
+    @Max(100)
+    @ApiPropertyOptional({ minimum: 1, maximum: 100, default: 20 })
     limit?: number = 20;
 }
