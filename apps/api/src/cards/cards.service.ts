@@ -1,7 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CardQueryDto } from './dto/card-query.dto';
-import { PaginatedCardsDto } from './dto/card-response.dto';
+import { CardListItemDto, PaginatedCardsDto } from './dto/card-response.dto';
 import { DEFAULT_LANG } from '../common/constants';
 import { cardInclude } from './internal/card-include';
 import { buildCardWhere } from './internal/card-where';
@@ -24,6 +24,16 @@ export class CardsService {
         const [cards, total] = await this.prisma.$transaction([this.prisma.card.findMany({ where, include, skip, take, orderBy: { code: 'asc' } }), this.prisma.card.count({ where })]);
 
         return { items: cards.map((c) => mapCard(c, lang)), total, page, limit };
+    }
+
+    async findOne(code: string, lang: string = DEFAULT_LANG): Promise<CardListItemDto> {
+        const card = await this.prisma.card.findUnique({ where: { code }, include: cardInclude(lang) });
+        if (!card) {
+            throw new NotFoundException(`Card ${code} not found`);
+        }
+
+        return mapCard(card, lang);
+
     }
 
 

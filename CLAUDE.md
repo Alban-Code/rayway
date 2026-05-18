@@ -113,7 +113,43 @@ Note: punk-records groups variants by Bandai **product** (`pack_id`), not by TCG
 
 ### API (`apps/api/src`)
 
-NestJS modules organized one-per-domain-feature. Current state: `cards/` and `decks/` modules exist but were built against the previous schema and need to be rewritten to match the redesigned model (renamed/removed fields like `isDon`, `CardTrigger`, etc.).
+NestJS modules organized one-per-domain-feature. All routes are prefixed with `/api/` (set via `app.setGlobalPrefix('api')`); Swagger UI is exposed at `/api/docs`.
+
+Module structure convention (established by `cards/`):
+
+```
+<module>/
+├── <module>.module.ts
+├── <module>.controller.ts
+├── <module>.service.ts        # orchestration only — thin
+├── dto/                        # input + response DTOs (with @ApiProperty for Swagger)
+└── internal/                   # private helpers, not imported from outside the module
+    ├── *-include.ts            # Prisma `include` factory + `GetPayload` type
+    ├── *-where.ts              # Prisma `where` builder
+    └── *-mapper.ts             # DB-payload → DTO mapper
+```
+
+Cross-module shared code lives in `src/common/`:
+
+- `common/constants.ts` — `DEFAULT_LANG = 'en'` and other globals
+- `common/lang/pick-by-lang.ts` — generic `pickByLang<T>(items, lang)` helper that returns the entry matching the requested language, falls back to `DEFAULT_LANG`, or `null` if neither exists
+
+Language resolution pattern: every endpoint that returns translatable content accepts a `lang` query param (defaulting to `'en'`). The Prisma `include` filters translations on `[lang, DEFAULT_LANG]` only (not all 6 langs), and the mapper picks the requested language with EN fallback per row. The response includes a per-card `language` field reflecting which translation was actually served.
+
+DTO / Prisma typing patterns to follow:
+
+- Use `satisfies Prisma.<Model>Include` (not `: Prisma.<Model>Include`) on include literals — preserves the precise shape so `Prisma.<Model>GetPayload<{ include: ReturnType<typeof factory> }>` produces a fully-typed payload.
+- Response DTOs use definite-assignment `!:` (e.g. `code!: string`) since values are assigned at runtime by the mapper, not in a constructor.
+- For nullable fields, use `field!: T | null` with `@ApiProperty({ type: T, nullable: true })`.
+- For arrays of DTOs, use `@ApiProperty({ type: [SubDto] })` — Swagger does not infer this from TypeScript.
+
+Bootstrap quirk: `NestFactory.create(AppModule, new ExpressAdapter())` is passed explicitly in `main.ts` because npm-workspace hoisting breaks NestJS's dynamic `PackageLoader` autodetection of `@nestjs/platform-express`.
+
+Modules status:
+
+- **`cards/`** — ✅ implemented. `GET /api/cards` returns a paginated list with filters (`colors`, `category`, `tags`, `q`, `lang`, `page`, `limit`) and full per-language resolution. See `apps/api/src/cards/` as the reference structure for new modules.
+- **`decks/`** — ❌ removed (was built against the old schema). To be rewritten with cross-table constraints enforced at the service layer: leader must be type `Leader`, deck cards must match leader colors, deck ≤ 50 cards, max 4 copies per card.
+- **`users/`, `collection/`, `formats/`, `types/`, `tags/`, `mentor/` (RAG)** — not yet implemented.
 
 ### Web (`apps/web/src`)
 

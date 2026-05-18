@@ -2,6 +2,7 @@ import { IsOptional, IsEnum, IsInt, Min, Max, IsArray, IsString, Length } from "
 import { Transform, Type } from "class-transformer";
 import { ApiPropertyOptional } from "@nestjs/swagger";
 import { Category, Color } from "../../generated/prisma/enums";
+import { DEFAULT_LANG } from "../../common/constants";
 
 export class CardQueryDto {
     @IsOptional()
@@ -32,7 +33,7 @@ export class CardQueryDto {
     @IsString()
     @Length(2, 5)
     @ApiPropertyOptional({ default: "en", example: "fr" })
-    lang?: string = "en";
+    lang: string = DEFAULT_LANG;
 
     @IsOptional()
     @Type(() => Number)
