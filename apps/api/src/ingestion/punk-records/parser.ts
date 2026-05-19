@@ -12,8 +12,8 @@ import {
   Category,
   Attribute,
   Rarity,
-} from '../../generated/prisma/enums';
-import type { PunkCard } from './types';
+} from '../../generated/prisma/enums.js';
+import type { PunkCard } from './types.js';
 
 /**
  * Forme normalisée d'une carte, prête à être upserted.

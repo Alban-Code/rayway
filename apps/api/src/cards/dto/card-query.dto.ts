@@ -1,8 +1,8 @@
 import { IsOptional, IsEnum, IsInt, Min, Max, IsArray, IsString, Length } from "class-validator";
 import { Transform, Type } from "class-transformer";
 import { ApiPropertyOptional } from "@nestjs/swagger";
-import { Category, Color } from "../../generated/prisma/enums";
-import { DEFAULT_LANG } from "../../common/constants";
+import { Category, Color } from "../../generated/prisma/enums.js";
+import { DEFAULT_LANG } from "../../common/constants.js";
 
 export class CardQueryDto {
     @IsOptional()

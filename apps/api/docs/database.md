@@ -90,7 +90,11 @@ These five concepts are easy to confuse — read this section once.
 │  User ──< Deck ──< DeckCard >── CardVariant                       │
 │   │       └─ leader: CardVariant                                  │
 │   │       └─ format: Format?                                      │
-│   └──< CollectionItem >── CardVariant  (× Language)               │
+│   ├──< CollectionItem >── CardVariant  (× Language)               │
+│   ├──< Session  (Better Auth — active sessions per device)        │
+│   └──< Account  (Better Auth — credential or OAuth identity)      │
+│                                                                    │
+│  Verification (Better Auth — short-lived tokens, no user FK)       │
 └────────────────────────────────────────────────────────────────────┘
 
 ┌─ Card catalog (core domain) ─────────────────────────────────────┐
@@ -224,20 +228,61 @@ await prisma.language.createMany({
 
 ---
 
-### 6.2 Users
+### 6.2 Users & auth
+
+The auth stack is **Better Auth** (self-hosted in NestJS, sessions in Postgres via Prisma). It owns the `Session`, `Account`, and `Verification` tables; the application owns `User`'s domain fields.
 
 #### `User`
-
-Minimal user model. Auth fields (passwordHash, OAuth providers, sessions) will be added when an auth provider is chosen (Supabase / NextAuth / Clerk).
 
 | Field | Type | Required | Notes |
 |---|---|---|---|
 | `id` | `String` PK | cuid | |
 | `email` | `String` | yes, unique | |
-| `displayName` | `String` | yes | |
+| `name` | `String` | yes | display name (replaces former `displayName`) |
+| `emailVerified` | `Boolean` | default `false` | toggled by Better Auth when verification flow is enabled |
+| `image` | `String?` | optional | profile picture URL |
 | `createdAt`, `updatedAt` | `DateTime` | auto | |
 
-Relations: `decks` (1-to-many), `collectionItems` (1-to-many). Deleting a user cascades to both.
+Relations: `decks`, `collectionItems`, `sessions`, `accounts` (all 1-to-many). Deleting a user cascades to all of them.
+
+#### `Session` (Better Auth)
+
+Active auth sessions. One row per logged-in device/browser.
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `id` | `String` PK | not cuid — Better Auth-issued | |
+| `userId` | `String` FK → User | yes, cascade on delete | |
+| `token` | `String` | yes, unique | matches the `better-auth.session_token` cookie value |
+| `expiresAt` | `DateTime` | yes | |
+| `ipAddress`, `userAgent` | `String?` | optional | populated by Better Auth |
+| `createdAt`, `updatedAt` | `DateTime` | auto | |
+
+#### `Account` (Better Auth)
+
+Identity provider link. For email/password, one row per user with `providerId = "credential"` storing the password hash. For OAuth (future), one row per linked provider (Google / Discord / …).
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `id` | `String` PK | | |
+| `userId` | `String` FK → User | yes, cascade on delete | |
+| `accountId` | `String` | yes | provider-side identifier |
+| `providerId` | `String` | yes | `"credential"` for email/password |
+| `password` | `String?` | optional | bcrypt hash for `providerId = "credential"` |
+| OAuth tokens | various | optional | `accessToken`, `refreshToken`, `idToken`, `scope`, `expiresAt`… |
+
+#### `Verification` (Better Auth)
+
+Time-bounded tokens for email verification, password reset, etc. Managed entirely by Better Auth.
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `id` | `String` PK | | |
+| `identifier` | `String` | yes | usually the email being verified |
+| `value` | `String` | yes | the token |
+| `expiresAt` | `DateTime` | yes | |
+
+⚠️ The Prisma `@@map(...)` lowercase mappings added by Better Auth's CLI have been **removed** — table names stay PascalCase, consistent with the rest of the schema.
 
 ---
 
@@ -733,7 +778,7 @@ These were considered and deliberately left out of the MVP:
 - **Price history** — `marketPrice`/`inventoryPrice` are point-in-time snapshots on `CardVariant`. For charts/trends, add a `PriceSnapshot` table.
 - **Match history / play logs** — placeholder for when a simulator is added; new tables (`Match`, `MatchParticipant`, `MatchEvent`) will be additive.
 - **Deck social features** (likes, comments, forks) — `Deck.isPublic` is the only social field for now.
-- **Auth fields on `User`** — passwordHash, OAuth provider IDs, sessions: deferred until an auth provider is chosen.
+- **OAuth providers** — Better Auth is wired with email/password only; Google/Discord/etc. will be added later as additional `Account` rows (no schema change required, just config).
 
 ---
 

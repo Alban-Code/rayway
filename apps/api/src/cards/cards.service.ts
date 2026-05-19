@@ -1,11 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
-import { CardQueryDto } from './dto/card-query.dto';
-import { CardListItemDto, PaginatedCardsDto } from './dto/card-response.dto';
-import { DEFAULT_LANG } from '../common/constants';
-import { cardInclude } from './internal/card-include';
-import { buildCardWhere } from './internal/card-where';
-import { mapCard } from './internal/card-mapper';
+import { PrismaService } from '../../prisma/prisma.service.js';
+import { CardQueryDto } from './dto/card-query.dto.js';
+import { CardListItemDto, PaginatedCardsDto } from './dto/card-response.dto.js';
+import { DEFAULT_LANG } from '../common/constants.js';
+import { cardInclude } from './internal/card-include.js';
+import { buildCardWhere } from './internal/card-where.js';
+import { mapCard } from './internal/card-mapper.js';
 
 @Injectable()
 export class CardsService {

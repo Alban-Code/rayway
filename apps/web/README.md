@@ -1,73 +1,29 @@
-# React + TypeScript + Vite
+# Rayway Web
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React 19 SPA served by Vite. Frontend for the Rayway One Piece TCG companion.
 
-Currently, two official plugins are available:
+⚠️ Currently at the scaffold stage. The first vertical slice (sign-up / sign-in / sign-out / account view / card list + filters / card detail) is in progress.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Planned stack
 
-## React Compiler
+- **React 19** + **Vite**
+- **`react-router` v7** (library/SPA mode — no SSR)
+- **`@tanstack/react-query`** for server state
+- **`better-auth/react`** for the auth client (`useSession`, `signIn.email`, `signOut`)
+- **Tailwind v4** (via `@tailwindcss/vite`) + **shadcn/ui** for components
+- **`react-hook-form` + `zod`** for forms
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Cross-origin / cookies
 
-## Expanding the ESLint configuration
+The web app talks to the API at `http://localhost:3000` from `http://localhost:5173`. All API fetches **must** use `credentials: 'include'` so that the `better-auth.session_token` cookie is sent. A small `api/client.ts` wrapper centralizes this.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+The API side needs matching CORS + `trustedOrigins` config — see [`../../CLAUDE.md`](../../CLAUDE.md) → "Web" section.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Scripts
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run dev      # vite dev server (port 5173)
+npm run build    # tsc -b && vite build
+npm run lint     # eslint
+npm run preview  # serve the production build locally
 ```

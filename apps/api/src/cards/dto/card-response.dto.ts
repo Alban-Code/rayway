@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { Category, Color, Attribute, Rarity, VariantType } from "../../generated/prisma/enums";
+import { Category, Color, Attribute, Rarity, VariantType } from "../../generated/prisma/enums.js";
 
 export class CardTypeDto {
     @ApiProperty({ example: "straw-hat-crew" })

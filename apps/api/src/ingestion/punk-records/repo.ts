@@ -12,7 +12,7 @@ import { execFile } from 'node:child_process';
 import { access, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
-import { log } from './logger';
+import { log } from './logger.js';
 
 const exec = promisify(execFile);
 

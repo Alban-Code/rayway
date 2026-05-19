@@ -1,5 +1,5 @@
 import { IsOptional, IsString, Length } from "class-validator";
-import { DEFAULT_LANG } from "../../common/constants";
+import { DEFAULT_LANG } from "../../common/constants.js";
 import { ApiPropertyOptional } from "@nestjs/swagger";
 
 export class CardDetailQueryDto {

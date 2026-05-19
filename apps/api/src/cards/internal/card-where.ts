@@ -1,5 +1,5 @@
-import { Prisma } from "../../generated/prisma/client";
-import { CardQueryDto } from "../dto/card-query.dto";
+import { Prisma } from "../../generated/prisma/client.js";
+import { CardQueryDto } from "../dto/card-query.dto.js";
 
 export function buildCardWhere(query: CardQueryDto): Prisma.CardWhereInput {
     const { category, colors, q, tags } = query;

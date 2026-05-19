@@ -1,7 +1,7 @@
-import { DEFAULT_LANG } from "../../common/constants";
-import { pickByLang } from "../../common/lang/pick-by-lang";
-import { CardListItemDto } from "../dto/card-response.dto";
-import { CardWithRelations } from "./card-include";
+import { DEFAULT_LANG } from "../../common/constants.js";
+import { pickByLang } from "../../common/lang/pick-by-lang.js";
+import { CardListItemDto } from "../dto/card-response.dto.js";
+import { CardWithRelations } from "./card-include.js";
 
 export function mapCard(card: CardWithRelations, lang: string): CardListItemDto {
     const translation = pickByLang(card.translations, lang);

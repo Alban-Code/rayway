@@ -11,12 +11,12 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import 'dotenv/config';
-import { PrismaClient } from '../../generated/prisma/client';
+import { PrismaClient } from '../../generated/prisma/client.js';
 import { PrismaPg } from '@prisma/adapter-pg';
 
-import { log } from './logger';
-import { syncRepo, listChangedCardFiles } from './repo';
-import { parseCardFile } from './parser';
+import { log } from './logger.js';
+import { syncRepo, listChangedCardFiles } from './repo.js';
+import { parseCardFile } from './parser.js';
 import {
   ensureLanguage,
   ensureSet,
@@ -24,8 +24,8 @@ import {
   recordRun,
   getLastSuccessfulSha,
   IngestionRunSummary,
-} from './upsert';
-import { LANG_TO_FOLDER, SupportedLang } from './types';
+} from './upsert.js';
+import { LANG_TO_FOLDER, SupportedLang } from './types.js';
 
 const LANGS: SupportedLang[] = ['en', 'fr'];
 const LANG_NAMES: Record<SupportedLang, string> = {

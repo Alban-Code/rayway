@@ -62,11 +62,15 @@ npx prisma generate         # regenerate client after schema changes
 The project uses the **new `prisma-client` generator** (Prisma 7+), not the legacy `prisma-client-js`. The new generator requires a custom output path — the client is generated to `apps/api/src/generated/prisma`. Import from there, not from `@prisma/client`:
 
 ```ts
-import { PrismaClient } from '../generated/prisma/client'; // from src/
-import { Category, Color, Attribute, Rarity } from '../generated/prisma/enums';
+import { PrismaClient } from '../generated/prisma/client.js'; // from src/ — note the .js extension (ESM)
+import { Category, Color, Attribute, Rarity } from '../generated/prisma/enums.js';
 ```
 
 `prisma.config.ts` at the api root configures the schema path and uses `DATABASE_URL` from the environment.
+
+⚠️ Prisma 7's `PrismaClient` constructor **requires** a driver adapter argument. Calling `new PrismaClient()` without one throws. See `apps/api/prisma/prisma.service.ts` for the reference pattern (uses `@prisma/adapter-pg` + `DATABASE_URL`).
+
+⚠️ After any `schema.prisma` change, run `npx prisma generate` explicitly. With the new generator + custom output path, `prisma migrate dev` does NOT always regenerate the client automatically, leading to "column does not exist" errors at runtime even though the DB is up-to-date.
 
 ## Architecture
 
@@ -115,6 +119,8 @@ Note: punk-records groups variants by Bandai **product** (`pack_id`), not by TCG
 
 NestJS modules organized one-per-domain-feature. All routes are prefixed with `/api/` (set via `app.setGlobalPrefix('api')`); Swagger UI is exposed at `/api/docs`.
 
+⚠️ `apps/api` is an **ESM project** (`"type": "module"` in `package.json`, `"module": "NodeNext"` in `tsconfig.json`). All relative imports must include the `.js` extension (e.g. `from './cards/cards.module.js'`) — TypeScript does not auto-add it, and Node's ESM resolver requires it. Package imports (`from "@nestjs/common"`) don't need it (resolved via the package's `exports` field).
+
 Module structure convention (established by `cards/`):
 
 ```
@@ -143,14 +149,61 @@ DTO / Prisma typing patterns to follow:
 - For nullable fields, use `field!: T | null` with `@ApiProperty({ type: T, nullable: true })`.
 - For arrays of DTOs, use `@ApiProperty({ type: [SubDto] })` — Swagger does not infer this from TypeScript.
 
-Bootstrap quirk: `NestFactory.create(AppModule, new ExpressAdapter())` is passed explicitly in `main.ts` because npm-workspace hoisting breaks NestJS's dynamic `PackageLoader` autodetection of `@nestjs/platform-express`.
+Bootstrap quirks in `main.ts`:
+- `NestFactory.create(AppModule, new ExpressAdapter(), { bodyParser: false })` is passed explicitly because npm-workspace hoisting breaks NestJS's dynamic `PackageLoader` autodetection of `@nestjs/platform-express`.
+- `bodyParser: false` is required by `@thallesp/nestjs-better-auth` — the lib disables NestJS's global parser then re-adds JSON/urlencoded parsing for non-auth routes itself.
+
+### Auth (`apps/api/src/auth/`)
+
+Auth stack: **Better Auth** (self-hosted in NestJS, sessions in Postgres via Prisma) + **`@thallesp/nestjs-better-auth`** wrapper for the NestJS integration. Future paid plans will use **Polar.sh** via `@polar-sh/better-auth` (Merchant of Record, EU VAT handled).
+
+Files:
+- `auth/auth.ts` — instantiates `betterAuth({ database: prismaAdapter(prisma, { provider: 'postgresql' }), emailAndPassword: { enabled: true, requireEmailVerification: false } })`. Owns its own `PrismaClient` (separate from `PrismaService`) because the file is evaluated at module-load time, before NestJS DI is wired.
+- `auth/auth.module.ts` — wraps `AuthModule.forRoot({ auth })` from `@thallesp/nestjs-better-auth` (aliased as `BetterAuthModule` to avoid the name clash with our wrapper). Exported and imported by `AppModule`.
+
+Schema additions for Better Auth (in `prisma/schema.prisma`):
+- `User` extended with `name` (replaces former `displayName`), `emailVerified`, `image`, plus `sessions` / `accounts` relations.
+- New tables: `Session`, `Account`, `Verification`. We **removed the `@@map(...)` lowercase mappings** that the CLI added, to keep SQL table naming consistent (PascalCase) with the rest of the schema.
+
+Routes: Better Auth mounts its routes at `/api/auth/*` via an Express middleware (not via NestJS controllers, so they don't appear in the Nest `RouterExplorer` log). The lib detects and respects the global `/api` prefix automatically — no `setGlobalPrefix` exclusion needed.
+
+Env vars (in `apps/api/.env`):
+- `BETTER_AUTH_SECRET` — must be ≥ 32 chars, generate with `openssl rand -base64 32`
+- `BETTER_AUTH_URL` — `http://localhost:3000` in dev
+
+⚠️ Version sync: `@thallesp/nestjs-better-auth` and `better-auth` must stay roughly in sync. The wrapper v2.4 imports `createAuthMiddleware` from `better-auth/plugins` which fails against recent `better-auth` (1.6+) where this symbol moved to `better-auth/api`. Use wrapper ≥ 2.6.
+
+⚠️ The wrapper requires Node ≥ 22.22.1. Older Node (22.20-) only triggers an `EBADENGINE` warning at install but may fail later at runtime.
+
+⚠️ The deprecation warning shown by TypeScript on `forRoot` is cosmetic — only the legacy `forRoot(auth, options?)` 2-arg signature is deprecated. The object-based `forRoot({ auth, ...options })` we use is fine.
+
+Auth-protection model: the wrapper installs a **global `AuthGuard` by default** (`disableGlobalAuthGuard: false`). Every route is protected unless explicitly marked `@AllowAnonymous()` (or `@OptionalAuth()`). Use the `@Session() session: UserSession<typeof auth>` param decorator (from `@thallesp/nestjs-better-auth`) in protected handlers to access `session.user.id`.
+
+⚠️ Don't return `session.user` directly to clients — it's Better Auth's internal shape and may carry fields you didn't intend to expose. Always re-fetch via Prisma with an explicit `select` matching your response DTO.
 
 Modules status:
 
-- **`cards/`** — ✅ implemented. `GET /api/cards` returns a paginated list with filters (`colors`, `category`, `tags`, `q`, `lang`, `page`, `limit`) and full per-language resolution. See `apps/api/src/cards/` as the reference structure for new modules.
-- **`decks/`** — ❌ removed (was built against the old schema). To be rewritten with cross-table constraints enforced at the service layer: leader must be type `Leader`, deck cards must match leader colors, deck ≤ 50 cards, max 4 copies per card.
-- **`users/`, `collection/`, `formats/`, `types/`, `tags/`, `mentor/` (RAG)** — not yet implemented.
+- **`cards/`** — ✅ implemented. `GET /api/cards` (paginated list with filters: `colors`, `category`, `tags`, `q`, `lang`, `page`, `limit`) + `GET /api/cards/:code` (detail). Multi-lang resolution with EN fallback. Public routes (marked `@AllowAnonymous()`). See `apps/api/src/cards/` as the reference structure for new modules.
+- **`auth/`** — ✅ Better Auth integration working. `POST /api/auth/sign-up/email`, `/sign-in/email`, `GET /api/auth/get-session` all functional. Email/password only for now; OAuth (Google/Discord) deferred. Email verification disabled at MVP — can be flipped on later via the `requireEmailVerification` config flag.
+- **`users/`** — ✅ implemented. `GET /api/users/me` returns the authenticated user (id, email, name, emailVerified, image, createdAt). Protected by the global auth guard. Minimal structure (no `internal/` helpers — no translations, no complex filters).
+- **`decks/`** — ❌ removed (was built against the old schema). To be rewritten with cross-table constraints enforced at the service layer: leader must be type `Leader`, deck cards must match leader colors (intersection of `Card.colors ∩ Leader.colors ≠ ∅`), deck ≤ 50 cards, max 4 copies per `Card.code` (summed across variants), no DON!! cards (10 standard DON!! implicit at MVP).
+- **`collection/`, `formats/`, `types/`, `tags/`, `mentor/` (RAG)** — not yet implemented. Priority order TBD; next focus is the web frontend (first slice: sign-up/sign-in/sign-out, account view, card list with filters, card detail).
 
 ### Web (`apps/web/src`)
 
 React 19 SPA served by Vite. The frontend is at the scaffold stage.
+
+Planned stack for the first slice (auth + cards browsing):
+
+- **Routing**: `react-router` v7 in library/SPA mode (no SSR — the Nest API is the only backend).
+- **Data fetching**: `@tanstack/react-query` for cache, refetch, loading/error states and invalidation after mutations.
+- **Auth client**: `better-auth/react` (hooks `useSession`, `signIn.email`, `signOut`). All fetches must use `credentials: 'include'` so the `better-auth.session_token` cookie is sent cross-origin.
+- **UI**: Tailwind v4 (via `@tailwindcss/vite`) + shadcn/ui (Radix primitives copied into the repo, no runtime lib).
+- **Forms**: `react-hook-form` + `zod` (`@hookform/resolvers`).
+- **HTTP**: native `fetch`, wrapped in a thin `api/client.ts` that injects the base URL and `credentials: 'include'`.
+
+Cross-origin wiring (front on `:5173`, API on `:3000`):
+
+- API: `app.enableCors({ origin: 'http://localhost:5173', credentials: true })` in `main.ts`.
+- Better Auth: `trustedOrigins: ['http://localhost:5173']` in the `betterAuth({...})` config (in `auth/auth.ts`).
+- Front: every fetch must pass `credentials: 'include'`, otherwise the session cookie is dropped silently.

@@ -1,5 +1,5 @@
-import { DEFAULT_LANG } from "../../common/constants";
-import { Prisma } from "../../generated/prisma/client";
+import { DEFAULT_LANG } from "../../common/constants.js";
+import { Prisma } from "../../generated/prisma/client.js";
 
 export const cardInclude = (lang: string) => ({
     set: true,

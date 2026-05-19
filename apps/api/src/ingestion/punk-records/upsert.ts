@@ -12,9 +12,9 @@
 //     → c'est le rôle de `ensureLanguage` / `ensureSet`.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { log } from './logger';
-import type { PrismaClient } from '../../generated/prisma/client';
-import type { NormalizedCard } from './parser';
+import { log } from './logger.js';
+import type { PrismaClient } from '../../generated/prisma/client.js';
+import type { NormalizedCard } from './parser.js';
 
 /**
  * Upsert qui respecte le flag `overridden` (champ booléen sur la row).

@@ -1,12 +1,14 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
-import { CardsService } from './cards.service';
+import { CardsService } from './cards.service.js';
 import { ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { CardListItemDto, PaginatedCardsDto } from './dto/card-response.dto';
-import { CardQueryDto } from './dto/card-query.dto';
-import { CardDetailQueryDto } from './dto/card-detail-query.dto';
+import { CardListItemDto, PaginatedCardsDto } from './dto/card-response.dto.js';
+import { CardQueryDto } from './dto/card-query.dto.js';
+import { CardDetailQueryDto } from './dto/card-detail-query.dto.js';
+import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
 
 @ApiTags('cards')
 @Controller('cards')
+@AllowAnonymous()
 export class CardsController {
     constructor(private readonly cardsService: CardsService) { }
 

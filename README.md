@@ -22,9 +22,17 @@ Crée le fichier `apps/api/.env` avec le contenu suivant (adapte les identifiant
 
 ```env
 DATABASE_URL="postgresql://<user>:<password>@localhost:5432/onepiecetcg-db?schema=public"
+BETTER_AUTH_SECRET="<openssl rand -base64 32>"
+BETTER_AUTH_URL="http://localhost:3000"
 ```
 
 Ce fichier est ignoré par git — ne jamais le committer.
+
+Pour générer un `BETTER_AUTH_SECRET` valide (≥ 32 caractères) :
+
+```bash
+openssl rand -base64 32
+```
 
 ## Base de données
 
