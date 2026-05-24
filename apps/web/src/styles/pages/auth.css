@@ -1,0 +1,609 @@
+.auth-stage {
+    position: relative;
+    height: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    overflow: hidden;
+}
+
+/* LEFT — hero with floating cards */
+.auth-hero {
+    position: relative;
+    overflow: hidden;
+    background:
+        radial-gradient(ellipse at 30% 30%, color-mix(in oklch, var(--accent) 14%, transparent), transparent 60%),
+        radial-gradient(ellipse at 70% 80%, color-mix(in oklch, var(--id-purple) 12%, transparent), transparent 55%),
+        var(--bg-canvas-2);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 48px 56px;
+}
+
+.auth-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(color-mix(in oklch, var(--fg) 4%, transparent) 1px, transparent 1px),
+        linear-gradient(90deg, color-mix(in oklch, var(--fg) 4%, transparent) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: radial-gradient(ellipse at 50% 50%, black 30%, transparent 75%);
+}
+
+.auth-hero>* {
+    position: relative;
+    z-index: 1;
+}
+
+.auth-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.auth-brand .mark {
+    width: 36px;
+    height: 36px;
+    color: var(--accent);
+    filter: drop-shadow(0 0 16px color-mix(in oklch, var(--accent-glow) 30%, transparent));
+}
+
+.auth-brand .wm {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 24px;
+    letter-spacing: -0.02em;
+}
+
+.auth-brand .palette-name {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--fg-3);
+    padding-left: 12px;
+    margin-left: 4px;
+    border-left: 1px solid var(--border-soft);
+}
+
+.hero-copy {
+    max-width: 460px;
+}
+
+.hero-copy .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-weight: 700;
+    color: var(--accent);
+    padding: 5px 10px;
+    border: 1px solid color-mix(in oklch, var(--accent) 35%, transparent);
+    background: color-mix(in oklch, var(--accent) 8%, transparent);
+    border-radius: 999px;
+    margin-bottom: 20px;
+}
+
+.hero-copy .eyebrow .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent-glow);
+    animation: pulse 1.8s infinite;
+}
+
+@keyframes pulse {
+    50% {
+        opacity: 0.4;
+    }
+}
+
+.hero-copy h1 {
+    font-family: var(--font-display);
+    font-size: 52px;
+    line-height: 1.02;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    text-wrap: balance;
+}
+
+.hero-copy h1 .accent {
+    color: var(--accent);
+    text-shadow: 0 0 40px color-mix(in oklch, var(--accent-glow) 20%, transparent);
+}
+
+.hero-copy p {
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--fg-2);
+    margin-top: 18px;
+    max-width: 380px;
+    text-wrap: pretty;
+}
+
+.hero-pile {
+    position: absolute;
+    bottom: -120px;
+    right: -80px;
+    display: flex;
+    gap: -10px;
+    z-index: 1;
+}
+
+.hero-pile .hc {
+    width: 200px;
+    aspect-ratio: 0.715/1;
+    border-radius: 16px;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid color-mix(in oklch, var(--id-color, var(--accent)) 45%, transparent);
+    box-shadow: 0 0 0 1px color-mix(in oklch, var(--id-color, var(--accent)) 40%, transparent),
+        0 0 60px color-mix(in oklch, var(--id-color, var(--accent)) 15%, transparent),
+        0 24px 64px -16px rgba(0, 0, 0, .7);
+}
+
+.hero-pile .hc .top-bar {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 4px;
+    background: var(--id-color, var(--accent));
+    box-shadow: 0 0 12px var(--id-color, var(--accent));
+}
+
+.hero-pile .hc .art {
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(ellipse at 35% 25%, color-mix(in oklch, var(--id-color, var(--accent)) 80%, transparent), transparent 55%),
+        linear-gradient(160deg, color-mix(in oklch, var(--id-color, var(--accent)) 50%, oklch(0.22 0.04 280)), color-mix(in oklch, var(--id-color, var(--accent)) 8%, oklch(0.14 0.02 280)));
+}
+
+.hero-pile .hc .ttag {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    padding: 3px 7px;
+    background: rgba(0, 0, 0, .55);
+    backdrop-filter: blur(8px);
+    border-radius: 5px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    color: #fff;
+}
+
+.hero-pile .hc .cost {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, .55);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 13px;
+    color: #fff;
+}
+
+.hero-pile .hc .nm {
+    position: absolute;
+    left: 14px;
+    right: 14px;
+    bottom: 22px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 13px;
+    color: #fff;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, .7);
+}
+
+.hero-pile .hc .cd {
+    position: absolute;
+    left: 14px;
+    bottom: 8px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: rgba(255, 255, 255, .7);
+}
+
+.hero-pile .hc1 {
+    transform: rotate(-12deg) translateY(20px);
+}
+
+.hero-pile .hc2 {
+    transform: rotate(-4deg);
+    margin-left: -50px;
+}
+
+.hero-pile .hc3 {
+    transform: rotate(6deg) translateY(-10px);
+    margin-left: -50px;
+}
+
+.hero-pile .hc4 {
+    transform: rotate(16deg) translateY(8px);
+    margin-left: -50px;
+}
+
+.hero-stats {
+    display: flex;
+    gap: 28px;
+}
+
+.hero-stats .s {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.hero-stats .v {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 28px;
+    letter-spacing: -0.02em;
+    color: var(--fg-1);
+}
+
+.hero-stats .v .em {
+    color: var(--accent);
+    text-shadow: 0 0 16px color-mix(in oklch, var(--accent-glow) 20%, transparent);
+}
+
+.hero-stats .l {
+    font-size: 11px;
+    color: var(--fg-3);
+    font-family: var(--font-mono);
+}
+
+/* RIGHT — form */
+.auth-form-side {
+    position: relative;
+    background: var(--bg-canvas);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 48px;
+    overflow-y: auto;
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 400px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.auth-toggle {
+    display: inline-flex;
+    padding: 3px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    align-self: flex-start;
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.auth-toggle button {
+    padding: 8px 18px;
+    border-radius: 9px;
+    background: transparent;
+    border: 0;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--fg-3);
+    cursor: pointer;
+    transition: color 200ms;
+    position: relative;
+    z-index: 1;
+}
+
+.auth-toggle button.on {
+    color: var(--accent-fg);
+}
+
+.auth-toggle .thumb {
+    position: absolute;
+    top: 3px;
+    bottom: 3px;
+    left: 3px;
+    width: calc(50% - 3px);
+    background: var(--accent);
+    border-radius: 9px;
+    box-shadow: 0 0 18px color-mix(in oklch, var(--accent-glow) 25%, transparent);
+    transition: transform 240ms var(--ease-out);
+}
+
+.auth-toggle.signup .thumb {
+    transform: translateX(100%);
+}
+
+.auth-title {
+    font-family: var(--font-display);
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    margin-bottom: 4px;
+}
+
+.auth-sub {
+    font-size: 14px;
+    color: var(--fg-3);
+    margin-bottom: 20px;
+}
+
+.auth-sub a {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.oauth-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.oauth-btn {
+    flex: 1;
+    height: 44px;
+    border-radius: 12px;
+    background: var(--bg-panel-2);
+    border: 1px solid var(--border-2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 120ms;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--fg-1);
+}
+
+.oauth-btn:hover {
+    background: color-mix(in oklch, var(--fg) 5%, var(--bg-panel-2));
+    border-color: var(--fg-4);
+}
+
+.oauth-btn svg {
+    width: 18px;
+    height: 18px;
+    stroke-width: 1.5;
+}
+
+.auth-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--fg-4);
+    font-size: 11px;
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin: 12px 0 8px;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+}
+
+.field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.field .lbl {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--fg-3);
+    font-weight: 700;
+    display: flex;
+    justify-content: space-between;
+}
+
+.field .lbl a {
+    color: var(--accent);
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.field .input {
+    height: 44px;
+    border-radius: 12px;
+}
+
+.field .input input {
+    font-size: 14px;
+}
+
+.field .input.has-error {
+    border-color: var(--danger);
+    box-shadow: 0 0 0 3px color-mix(in oklch, var(--danger) 18%, transparent);
+}
+
+.field .help {
+    font-size: 11.5px;
+    color: var(--fg-4);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.field .help.err {
+    color: var(--danger);
+}
+
+/* Password strength */
+.strength {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.strength .bars {
+    display: flex;
+    gap: 3px;
+}
+
+.strength .bars .b {
+    flex: 1;
+    height: 4px;
+    border-radius: 999px;
+    background: var(--bg-input);
+    transition: all 200ms;
+}
+
+.strength.lvl1 .bars .b:nth-child(1) {
+    background: var(--danger);
+    box-shadow: 0 0 6px color-mix(in oklch, var(--danger) 60%, transparent);
+}
+
+.strength.lvl2 .bars .b:nth-child(-n+2) {
+    background: var(--warning);
+    box-shadow: 0 0 6px color-mix(in oklch, var(--warning) 60%, transparent);
+}
+
+.strength.lvl3 .bars .b:nth-child(-n+3) {
+    background: var(--accent);
+    box-shadow: 0 0 6px color-mix(in oklch, var(--accent-glow) 30%, transparent);
+}
+
+.strength.lvl4 .bars .b {
+    background: var(--success);
+    box-shadow: 0 0 6px color-mix(in oklch, var(--success) 60%, transparent);
+}
+
+.strength .lbl-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: var(--fg-3);
+}
+
+.strength.lvl4 .lbl-row .r {
+    color: var(--success);
+}
+
+.strength.lvl3 .lbl-row .r {
+    color: var(--accent);
+}
+
+.strength.lvl2 .lbl-row .r {
+    color: var(--warning);
+}
+
+.strength.lvl1 .lbl-row .r {
+    color: var(--danger);
+}
+
+.check-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12.5px;
+    color: var(--fg-2);
+}
+
+.check-row .cb {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    background: var(--bg-input);
+    border: 1px solid var(--border-2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: transparent;
+    cursor: pointer;
+    transition: all 120ms;
+    flex: none;
+}
+
+.check-row .cb.on {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-fg);
+    box-shadow: 0 0 12px color-mix(in oklch, var(--accent-glow) 20%, transparent);
+}
+
+.check-row a {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.submit-btn {
+    height: 46px;
+    border-radius: 12px;
+    background: var(--accent);
+    color: var(--accent-fg);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    border: 0;
+    cursor: pointer;
+    box-shadow: 0 0 0 1px color-mix(in oklch, var(--accent-hi) 40%, transparent),
+        0 0 32px color-mix(in oklch, var(--accent-glow) calc(50% * var(--glow-mult, 1)), transparent);
+    transition: all 160ms var(--ease-inout);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.submit-btn:hover {
+    background: var(--accent-hi);
+    transform: translateY(-1px);
+    box-shadow: 0 0 0 1px color-mix(in oklch, var(--accent-hi) 50%, transparent), 0 0 40px color-mix(in oklch, var(--accent-glow) 33%, transparent), 0 8px 24px -8px color-mix(in oklch, var(--accent) 35%, transparent);
+}
+
+.auth-foot {
+    margin-top: 8px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--fg-4);
+}
+
+.auth-foot a {
+    color: var(--fg-2);
+    text-decoration: none;
+}
+
+.auth-foot a:hover {
+    color: var(--accent);
+}
+
+.auth-stage {
+    height: 100vh;
+    overflow: hidden;
+}

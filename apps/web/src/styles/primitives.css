@@ -1,0 +1,283 @@
+.btn {
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 13px;
+    border-radius: 10px;
+    padding: 9px 14px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 120ms var(--ease-inout);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    letter-spacing: -0.005em;
+    color: var(--fg-1);
+    background: transparent;
+}
+
+.btn svg {
+    width: 14px;
+    height: 14px;
+    stroke-width: 1.75;
+}
+
+.btn.primary {
+    background: var(--accent);
+    color: var(--accent-fg);
+}
+
+.btn.primary:hover {
+    background: var(--accent-hi);
+    box-shadow: 0 0 0 1px color-mix(in oklch, var(--accent-glow) 25%, transparent),
+        0 0 calc(28px * var(--glow-mult, 1)) color-mix(in oklch, var(--accent-glow) calc(55% * var(--glow-mult, 1)), transparent);
+}
+
+.btn.secondary {
+    background: var(--bg-panel-2);
+    color: var(--fg-1);
+    border-color: var(--border-2);
+}
+
+.btn.secondary:hover {
+    background: color-mix(in oklch, var(--bg-panel-2) 80%, var(--fg));
+    border-color: color-mix(in oklch, var(--fg) 28%, transparent);
+}
+
+.btn.ghost {
+    background: transparent;
+    color: var(--fg-2);
+    border-color: var(--border-soft);
+}
+
+.btn.ghost:hover {
+    background: color-mix(in oklch, var(--fg) 6%, transparent);
+    color: var(--fg-1);
+    border-color: var(--border);
+}
+
+.btn.lg {
+    padding: 11px 18px;
+    font-size: 14px;
+    border-radius: 12px;
+}
+
+.btn.sm {
+    padding: 6px 10px;
+    font-size: 12px;
+    border-radius: 8px;
+}
+
+.btn:active {
+    transform: scale(0.985);
+}
+
+.btn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* ============ Chips / pills ============ */
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 28px;
+    padding: 0 11px;
+    border-radius: 999px;
+    background: var(--bg-panel-2);
+    border: 1px solid var(--border);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--fg-2);
+    cursor: pointer;
+    transition: all 120ms;
+    white-space: nowrap;
+}
+
+.chip:hover {
+    color: var(--fg-1);
+    border-color: var(--border-2);
+}
+
+.chip.on {
+    color: var(--fg-1);
+    background: color-mix(in oklch, var(--accent) 16%, var(--bg-panel));
+    border-color: color-mix(in oklch, var(--accent) 45%, transparent);
+    box-shadow: 0 0 18px color-mix(in oklch, var(--accent-glow) calc(20% * var(--glow-mult, 1)), transparent);
+}
+
+.chip.removable {
+    padding-right: 6px;
+}
+
+.chip .x {
+    width: 16px;
+    height: 16px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--fg-3);
+}
+
+.chip .x:hover {
+    background: color-mix(in oklch, var(--fg) 14%, transparent);
+    color: var(--fg-1);
+}
+
+.chip.identity {
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    background: color-mix(in oklch, var(--id-color, var(--accent)) 14%, var(--bg-panel));
+    border-color: color-mix(in oklch, var(--id-color, var(--accent)) 38%, transparent);
+    color: var(--id-color);
+}
+
+.chip.identity .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--id-color);
+    box-shadow: 0 0 8px var(--id-color);
+}
+
+.chip.identity.on {
+    color: #fff;
+    background: color-mix(in oklch, var(--id-color) 28%, var(--bg-panel));
+    border-color: color-mix(in oklch, var(--id-color) 65%, transparent);
+    box-shadow: 0 0 20px color-mix(in oklch, var(--id-color) 40%, transparent);
+}
+
+/* Identity color tokens for chips */
+.id-RED {
+    --id-color: var(--id-red);
+}
+
+.id-GREEN {
+    --id-color: var(--id-green);
+}
+
+.id-BLUE {
+    --id-color: var(--id-blue);
+}
+
+.id-PURPLE {
+    --id-color: var(--id-purple);
+}
+
+.id-BLACK {
+    --id-color: var(--id-black);
+}
+
+.id-YELLOW {
+    --id-color: var(--id-yellow);
+}
+
+/* ============ Panels & inputs ============ */
+.panel {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow-2);
+}
+
+.input {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0 12px;
+    height: 36px;
+    transition: all 120ms var(--ease-inout);
+}
+
+.input:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent) 18%, transparent);
+}
+
+.input input,
+.input textarea {
+    background: transparent;
+    border: 0;
+    outline: none;
+    color: var(--fg-1);
+    font: inherit;
+    flex: 1;
+    font-size: 13px;
+}
+
+.input input::placeholder {
+    color: var(--fg-4);
+}
+
+.input svg {
+    color: var(--fg-3);
+    stroke-width: 1.75;
+}
+
+.input .kbd {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--fg-3);
+    padding: 2px 6px;
+    border: 1px solid var(--border-2);
+    border-radius: 5px;
+}
+
+.eyebrow {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 700;
+    color: var(--fg-4);
+}
+
+/* ============ Scrollbar ============ */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-2);
+    border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--fg-4);
+}
+
+/* ============ Misc ============ */
+.dot-divider {
+    width: 3px;
+    height: 3px;
+    border-radius: 999px;
+    background: var(--fg-4);
+}
+
+.muted {
+    color: var(--fg-3);
+}
+
+.row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.col {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.flex1 {
+    flex: 1;
+}

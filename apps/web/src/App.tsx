@@ -1,10 +1,24 @@
 import { createBrowserRouter, RouterProvider } from "react-router";
+import { AuthPage } from "@/pages/AuthPage";
+import { AccountPage } from '@/pages/AccountPage';
+import { RequireAuth } from "@/components/auth/RequireAuth";
+import { RedirectIfAuth } from "@/components/auth/RedirectIfAuth";
 
 const router = createBrowserRouter([
   { path: '/', element: <div>Home</div> },
-  { path: '/sign-in', element: <div>Sign in</div> },
-  { path: '/sign-up', element: <div>Sign up</div> },
-  { path: '/account', element: <div>Account</div> },
+  {
+    element: <RedirectIfAuth />,
+    children: [
+      { path: "/sign-in", element: <AuthPage /> },
+      { path: "/sign-up", element: <AuthPage /> }
+    ]
+  },
+  {
+    element: <RequireAuth />,
+    children: [
+      { path: '/account', element: <AccountPage /> },
+    ]
+  },
   { path: '/cards', element: <div>Cards list</div> },
   { path: '/cards/:code', element: <div>Card detail</div> },
 ])

@@ -191,9 +191,35 @@ Modules status:
 
 ### Web (`apps/web/src`)
 
-React 19 SPA served by Vite. The frontend is at the scaffold stage.
+React 19 SPA served by Vite. **Auth slice complete** (2026-05-24): sign-in / sign-up / sign-out / account view all functional via Better Auth. Data slices (Cards, Decks, etc.) not yet started — next slice will introduce React Query for domain data fetching.
 
-Planned stack for the first slice (auth + cards browsing):
+**Folder convention (type-first, established 2026-05-22):**
+
+```
+apps/web/src/
+├── pages/              ← ONLY route entry components (1 file = 1 route)
+├── components/
+│   ├── ui/             ← shadcn primitives, cross-feature
+│   └── <feature>/      ← sub-components scoped to one feature (auth/, cards/, ...)
+├── lib/                ← non-components: auth-client, Zod schemas, utils
+├── api/                ← HTTP client wrappers
+└── styles/             ← tokens.css, primitives.css, pages/*.css
+```
+
+Rules:
+- A component used in one feature → `components/<feature>/`
+- Cross-folder imports use the `@/...` alias (configured in `tsconfig.app.json` + `vite.config.ts`)
+- Same-folder imports use relative paths
+- Dependency direction is `pages → components`, never the reverse. If a sub-component exposes a prop type, define it **in the component** and let the page import it from there.
+- Page components stay thin: they read URL params/session, compose sub-components, pass props. No JSX-heavy rendering at the page level.
+
+**Design system (3-bridge architecture):**
+
+`src/styles/tokens.css` defines OKLCH colors per palette → `src/index.css` `@layer base` maps shadcn vars (`--primary`, `--border`, etc.) to Rayway tokens → `@theme inline` in `index.css` registers them with Tailwind v4 (`bg-primary` resolves to Rayway `--accent`). Result: shadcn `<Button>` and Rayway `.btn.primary` share the same colors automatically.
+
+For MVP, only the `devil-fruit` palette is wired (via `:root`); the 6 others stay dormant in `tokens.css` for later. Page-specific styles (e.g. `.auth-stage`, `.hero-pile`) live in `src/styles/pages/<page>.css`, ported from `maquettes/shared.css` on a per-page basis rather than translated to Tailwind utilities.
+
+Stack for the first slice (auth + cards browsing):
 
 - **Routing**: `react-router` v7 in library/SPA mode (no SSR — the Nest API is the only backend).
 - **Data fetching**: `@tanstack/react-query` for cache, refetch, loading/error states and invalidation after mutations.
@@ -207,3 +233,48 @@ Cross-origin wiring (front on `:5173`, API on `:3000`):
 - API: `app.enableCors({ origin: 'http://localhost:5173', credentials: true })` in `main.ts`.
 - Better Auth: `trustedOrigins: ['http://localhost:5173']` in the `betterAuth({...})` config (in `auth/auth.ts`).
 - Front: every fetch must pass `credentials: 'include'`, otherwise the session cookie is dropped silently.
+
+**Auth on the web client — source of truth:**
+
+`useSession()` from `better-auth/react` (re-exported via `@/lib/auth-client`) is the **single source of truth for the current user** on the web. It auto-syncs across tabs, refreshes on focus, and exposes `data.user` with `{ id, email, name, image, emailVerified, createdAt }` — the same fields `GET /api/users/me` returns.
+
+⚠️ **Do not call `/api/users/me` from the web client at MVP.** It would double a request for data already in the session. The REST endpoint is kept for future non-web consumers (mobile, CLI, server-to-server). If a future feature needs user fields not in the Better Auth session (e.g. domain-specific `level`, `preferences`), add them via a separate endpoint and a React Query hook — don't redirect `/me` for it.
+
+**Route protection — `<RequireAuth>` / `<RedirectIfAuth>` pattern:**
+
+React Router 7 has no middleware. Protection is done via **layout route wrappers** in `components/auth/`:
+
+- `RequireAuth.tsx` — reads `useSession`, returns `<Navigate to="/sign-in" replace />` if unauth'd, `<Outlet />` otherwise.
+- `RedirectIfAuth.tsx` — inverse, used to wrap `/sign-in` and `/sign-up` so logged-in users get bounced to `/account`.
+
+Both handle `isPending` explicitly (returns a loading state) — skipping this branch causes a flash redirect on first render before the session resolves.
+
+Wired in `App.tsx` via nested routes:
+
+```tsx
+{ element: <RedirectIfAuth />, children: [
+    { path: "/sign-in", element: <AuthPage /> },
+    { path: "/sign-up", element: <AuthPage /> },
+]},
+{ element: <RequireAuth />, children: [
+    { path: "/account", element: <AccountPage /> },
+]},
+```
+
+A *layout route* (no `path`, just `element` + `children`) is React Router's way of applying a wrapper to a group of routes. The wrapper renders `<Outlet />` where the matched child route should appear.
+
+**Pages currently implemented:**
+
+- `/sign-in`, `/sign-up` → `pages/AuthPage.tsx` (one component, mode derived from `location.pathname`). Composed of `components/auth/AuthHero` (left visual hero) + `components/auth/AuthForm` (right card with toggle + `SignInForm` / `SignUpForm`).
+- `/account` → `pages/AccountPage.tsx`. Displays user fields in a `.panel` (name, email, verified, member since) + sign-out button. Styles in `styles/pages/account.css`.
+
+**Form pattern (established by `SignInForm` / `SignUpForm`):**
+
+1. `useForm<T>({ resolver: zodResolver(schema) })` with Zod schema from `lib/auth-schemas.ts`.
+2. Local `useState<string | null>` for server errors (Better Auth returns `{ data, error }`, no throw).
+3. Async `onSubmit` calls Better Auth client, checks `error`, sets `serverError` on failure, `navigate("/account")` on success.
+4. Markup follows `field-group > field > .lbl + .input + .help.err` from `styles/pages/auth.css`.
+5. `autoComplete` matters: `current-password` (sign-in) vs `new-password` (sign-up).
+6. `noValidate` on `<form>` to disable HTML5 native validation in favor of Zod messages.
+
+`SignUpForm` extras: `watch("password")` + a `pwScore` helper (top-of-file pure function) drive a `.strength.lvl{0-4}` bar (CSS lives in `auth.css`, classes already styled).
