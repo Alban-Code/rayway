@@ -1,0 +1,102 @@
+import { api } from "./client";
+
+export const COLORS = ["Red", "Green", "Blue", "Purple", "Yellow", "Black"] as const;
+export type Color = typeof COLORS[number];
+
+export function isColor(value: string): value is Color {
+    return (COLORS as readonly string[]).includes(value)
+}
+
+export const CATEGORIES = ["Leader", "Character", "Event", "Stage", "Don"] as const;
+export type Category = typeof CATEGORIES[number];
+
+export function isCategory(value: string): value is Category {
+    return (CATEGORIES as readonly string[]).includes(value)
+}
+
+export const RARITIES = ['C', 'UC', 'R', 'SR', 'SEC', 'L', 'P', 'TR', 'SP'] as const;
+export type Rarity = typeof RARITIES[number];
+
+export const Attribute = {
+    Slash: 'Slash',
+    Strike: 'Strike',
+    Ranged: 'Ranged',
+    Special: 'Special',
+    Wisdom: 'Wisdom'
+} as const;
+
+export type Attribute = (typeof Attribute)[keyof typeof Attribute];
+
+export const VariantType = {
+    Regular: 'Regular',
+    Parallel: 'Parallel',
+    Reprint: 'Reprint'
+} as const
+
+export type VariantType = (typeof VariantType)[keyof typeof VariantType]
+
+export type CardTypeDto = {
+    code: string;
+    label: string;
+}
+
+export type CardVariantDto = {
+    variantCode: string;
+    variantType: VariantType;
+    isPromo: boolean;
+    isStarter: boolean;
+    imageUrl: string | null;
+}
+
+export type CardListItemDto = {
+    code: string
+    name: string
+    category: Category
+    colors: Color[];
+    cost: number | null;
+    counterAmount: number | null;
+    power: number | null;
+    life: number | null;
+    attributes: Attribute[];
+    rarity: Rarity;
+    types: CardTypeDto[];
+    effect: string | null;
+    triggerEffect: string | null;
+    variants: CardVariantDto[];
+    setCode: string;
+    language: string;
+
+}
+
+export type PaginatedCardsDto = {
+    items: CardListItemDto[];
+    total: number;
+    page: number;
+    limit: number;
+}
+
+export type CardListParams = {
+    page?: number
+    limit?: number
+    lang?: string
+    colors?: Color[]
+    category?: Category
+}
+
+export async function fetchCards(params: CardListParams = {}): Promise<PaginatedCardsDto> {
+    const queryString = new URLSearchParams()
+    if (params.page !== undefined) queryString.set('page', String(params.page))
+    if (params.limit !== undefined) queryString.set('limit', String(params.limit))
+    if (params.lang !== undefined) queryString.set('lang', params.lang)
+
+    if (params.colors !== undefined && params.colors.length > 0) {
+        params.colors.forEach(c => queryString.append('colors', c))
+    }
+
+    if (params.category !== undefined) queryString.set('category', params.category)
+
+    const path = `/cards${queryString.toString() ? `?${queryString}` : ''}`
+
+    return api<PaginatedCardsDto>(path)
+}
+

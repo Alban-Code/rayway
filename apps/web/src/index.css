@@ -2,6 +2,7 @@
 @import "./styles/primitives.css";
 @import "./styles/pages/auth.css";
 @import "./styles/pages/account.css";
+@import "./styles/pages/cards.css";
 @import "tailwindcss";
 @import "tw-animate-css";
 

@@ -1,0 +1,166 @@
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 28px;
+    padding: 0 11px;
+    border-radius: 999px;
+    background: var(--bg-panel-2);
+    border: 1px solid var(--border);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--fg-2);
+    cursor: pointer;
+    transition: all 120ms;
+    white-space: nowrap;
+}
+
+.chip:hover {
+    color: var(--fg-1);
+    border-color: var(--border-2);
+}
+
+.chip.on {
+    color: var(--fg-1);
+    background: color-mix(in oklch, var(--accent) 16%, var(--bg-panel));
+    border-color: color-mix(in oklch, var(--accent) 45%, transparent);
+    box-shadow: 0 0 18px color-mix(in oklch, var(--accent-glow) calc(20% * var(--glow-mult, 1)), transparent);
+}
+
+.chip.removable {
+    padding-right: 6px;
+}
+
+.chip .x {
+    width: 16px;
+    height: 16px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--fg-3);
+}
+
+.chip .x:hover {
+    background: color-mix(in oklch, var(--fg) 14%, transparent);
+    color: var(--fg-1);
+}
+
+.chip.identity {
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    background: color-mix(in oklch, var(--id-color, var(--accent)) 14%, var(--bg-panel));
+    border-color: color-mix(in oklch, var(--id-color, var(--accent)) 38%, transparent);
+    color: var(--id-color);
+}
+
+.chip.identity .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--id-color);
+    box-shadow: 0 0 8px var(--id-color);
+}
+
+.chip.identity.on {
+    color: #fff;
+    background: color-mix(in oklch, var(--id-color) 28%, var(--bg-panel));
+    border-color: color-mix(in oklch, var(--id-color) 65%, transparent);
+    box-shadow: 0 0 20px color-mix(in oklch, var(--id-color) 40%, transparent);
+}
+
+/* Identity color tokens for chips */
+.id-RED {
+    --id-color: var(--id-red);
+}
+
+.id-GREEN {
+    --id-color: var(--id-green);
+}
+
+.id-BLUE {
+    --id-color: var(--id-blue);
+}
+
+.id-PURPLE {
+    --id-color: var(--id-purple);
+}
+
+.id-BLACK {
+    --id-color: var(--id-black);
+}
+
+.id-YELLOW {
+    --id-color: var(--id-yellow);
+}
+
+.filters-col {
+    background: var(--bg-canvas-2);
+    border-right: 1px solid var(--border);
+    padding: 16px 14px 24px;
+    overflow-y: auto;
+}
+
+.filters-col .head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.filters-col .head h2 {
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--fg-3);
+}
+
+.filters-col .head .meta {
+    font-size: 11px;
+    color: var(--fg-3);
+}
+
+.filters-col .head .meta b {
+    color: var(--accent);
+}
+
+.filters-col .head a {
+    color: var(--accent);
+    text-decoration: none;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.filter-block {
+    margin-bottom: 16px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border-soft);
+}
+
+.filter-block:last-child {
+    border-bottom: 0;
+}
+
+.filter-block .label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--fg-4);
+    font-weight: 700;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.filter-block .label .vals {
+    font-family: var(--font-mono);
+    color: var(--accent);
+    font-size: 11px;
+    letter-spacing: 0;
+    text-transform: none;
+    font-weight: 600;
+}

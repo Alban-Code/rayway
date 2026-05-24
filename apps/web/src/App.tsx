@@ -3,6 +3,7 @@ import { AuthPage } from "@/pages/AuthPage";
 import { AccountPage } from '@/pages/AccountPage';
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { RedirectIfAuth } from "@/components/auth/RedirectIfAuth";
+import { CardsPage } from "@/pages/CardsPage";
 
 const router = createBrowserRouter([
   { path: '/', element: <div>Home</div> },
@@ -19,7 +20,7 @@ const router = createBrowserRouter([
       { path: '/account', element: <AccountPage /> },
     ]
   },
-  { path: '/cards', element: <div>Cards list</div> },
+  { path: '/cards', element: <CardsPage /> },
   { path: '/cards/:code', element: <div>Card detail</div> },
 ])
 
