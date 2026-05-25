@@ -164,3 +164,174 @@
     text-transform: none;
     font-weight: 600;
 }
+
+/* Card tile — 0.715:1 aspect */
+.card-tile {
+    width: 100%;
+    aspect-ratio: 0.715 / 1;
+    border-radius: var(--r-card);
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 220ms var(--ease-out), box-shadow 220ms var(--ease-out), opacity 120ms;
+    background: var(--bg-panel-2);
+    border: 1px solid var(--border-2);
+    isolation: isolate;
+    box-shadow: var(--shadow-card-rest);
+}
+
+.card-tile .art {
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(ellipse at 30% 25%, color-mix(in oklch, var(--id-color, var(--accent)) 70%, transparent), transparent 60%),
+        linear-gradient(160deg, color-mix(in oklch, var(--id-color, var(--accent)) 36%, oklch(0.22 0.04 280)), color-mix(in oklch, var(--id-color, var(--accent)) 8%, oklch(0.14 0.02 280)));
+}
+
+.card-tile .art::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+        repeating-linear-gradient(135deg, transparent 0 12px, rgba(255, 255, 255, .025) 12px 13px),
+        linear-gradient(to bottom, transparent 50%, rgba(0, 0, 0, .55));
+    mix-blend-mode: overlay;
+}
+
+.card-tile .cost {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, .55);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 13px;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, .18);
+}
+
+.card-tile .type-tag {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    height: 20px;
+    padding: 0 7px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 10px;
+    color: #fff;
+    background: rgba(0, 0, 0, .55);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, .16);
+    letter-spacing: 0.04em;
+}
+
+.card-tile .name {
+    position: absolute;
+    left: 9px;
+    right: 9px;
+    bottom: 24px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 11px;
+    color: #fff;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, .7);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.card-tile .code {
+    position: absolute;
+    left: 9px;
+    right: 9px;
+    bottom: 7px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: rgba(255, 255, 255, .7);
+    display: flex;
+    justify-content: space-between;
+}
+
+.card-tile .top-bar {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 3px;
+    background: var(--id-color, var(--accent));
+    box-shadow: 0 0 10px var(--id-color, var(--accent));
+    z-index: 2;
+}
+
+.card-tile:hover {
+    transform: translateY(-4px) scale(1.02);
+    z-index: 5;
+    box-shadow: 0 0 0 1px color-mix(in oklch, var(--id-color, var(--accent)) 60%, transparent),
+        0 0 calc(40px * var(--glow-mult, 1)) color-mix(in oklch, var(--id-color, var(--accent)) calc(45% * var(--glow-mult, 1)), transparent),
+        var(--shadow-card-hover);
+}
+
+.card-tile .compare-check {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    width: 18px;
+    height: 18px;
+    border-radius: 6px;
+    background: var(--accent);
+    color: var(--accent-fg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 12px color-mix(in oklch, var(--accent-glow) 25%, transparent);
+    z-index: 3;
+}
+
+.card-tile.in-compare {
+    box-shadow: 0 0 0 2px var(--accent), 0 0 24px color-mix(in oklch, var(--accent-glow) 20%, transparent), var(--shadow-card-rest);
+}
+
+/* Card grid dims on hover anywhere inside */
+.cards-grid:has(.card-tile:hover) .card-tile:not(:hover):not(.in-compare) {
+    opacity: 0.5;
+}
+
+body.no-dim .cards-grid:has(.card-tile:hover) .card-tile:not(:hover) {
+    opacity: 1;
+}
+
+.cards-grid {
+    display: grid;
+    gap: 14px;
+}
+
+.cards-grid.dense-sm {
+    grid-template-columns: repeat(7, 1fr);
+    gap: 10px;
+}
+
+.cards-grid.dense-md {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 12px;
+}
+
+.cards-grid.dense-lg {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+}
+
+.card-wrap {
+    position: relative;
+    transition: opacity 120ms;
+}

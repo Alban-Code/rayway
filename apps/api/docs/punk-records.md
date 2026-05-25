@@ -80,7 +80,7 @@ Every card file is a flat object with this shape:
 | `name` | string | `CardTranslation.name` | Localized. |
 | `rarity` | string | `Card.rarity` (via `RARITY_MAP`) | See mapping below. Drives `CardVariant.isPromo` too. |
 | `category` | string | `Card.category` (via `CARD_CATEGORY_MAP`) | `"Leader"`/`"Character"`/`"Event"`/`"Stage"`/`"Don"`. |
-| `img_full_url` | string | `CardVariantImage.imageUrl` | Absolute URL. Localized (different domain per language). |
+| `img_full_url` | string | `CardVariantImage.sourceUrl` + triggers a **download into our own storage** (see §7 below) | Absolute URL on Bandai's CDN. Localized (different domain per language). **Never served directly to clients** — see "Image self-hosting" decision. |
 | `img_url` | string | (ignored) | Relative path, we use `img_full_url`. |
 | `colors` | string[] | `Card.colors` (via `COLOR_MAP`) | 1 or 2 colors. |
 | `cost` | int \| null | `Card.cost` OR `Card.life` | **For Leaders, `cost` actually contains the life value.** Branch on `category`. |
@@ -154,7 +154,43 @@ Incremental state: `IngestionRun.commitSha` of the latest `success` row tells th
 
 ---
 
-## 7. Useful commands while working on the ingester
+## 7. Image storage (self-hosting)
+
+**Decision 2026-05-25**: we download every card image during ingestion and serve it from our own origin. We never expose Bandai's URLs to clients.
+
+**Why**: Bandai's image responses include `Cross-Origin-Resource-Policy: same-site`, so browsers refuse to render them when embedded from another domain (200 HTTP but broken `<img>`). Beyond the immediate blocker, depending on a third-party CDN we don't control is fragile (URL changes, rate limits, uptime, hotlink rules).
+
+**Storage abstraction**: an `ImageStorage` interface (in `apps/api/src/ingestion/punk-records/storage/`) with two implementations selected by env var:
+
+- `LocalDiskStorage` — writes to a directory configured by `IMAGE_STORAGE_PATH` (default `apps/api/storage/images/`, gitignored). Used in dev.
+- `S3Storage` — writes to an S3-compatible bucket configured by `IMAGE_S3_BUCKET`, `IMAGE_S3_REGION`, `IMAGE_S3_ENDPOINT`. Used in prod. Hosting target (AWS S3 / Cloudflare R2 / GCS / Backblaze B2) deferred until the site itself is deployed.
+
+**Storage key convention**: `<langCode>/<variantCode>.<ext>` — e.g. `en/OP02-001_p1.png`, `fr/OP02-001_p1.png`. The variant code is already stable across languages (per §3 quirk #4), so the same filename works per-language.
+
+**Served URL** = `IMAGE_BASE_URL` + storage key. Example: `IMAGE_BASE_URL=http://localhost:3000/static/images` in dev (with NestJS serving the local dir statically), or `IMAGE_BASE_URL=https://cdn.rayway.app` in prod. The DB stores neither the served URL nor the full local path — only the **storage key**, so swapping storage backends or domains requires no data migration.
+
+**Schema impact** on `CardVariantImage`:
+
+- Rename `imageUrl` → split into:
+  - `storageKey: String` — relative key, e.g. `en/OP02-001_p1.png`. Indexed.
+  - `sourceUrl: String` — Bandai's URL, kept for re-download detection (cache-buster query like `?251017` changes when Bandai re-uploads).
+- Add `downloadedAt: DateTime` for audit / staleness checks.
+- The served URL is computed at read time in the API mapper, not stored.
+
+**Download step in the ingestion pipeline**:
+
+- New file `image-downloader.ts` (no Prisma import, no business logic — just HTTP + storage).
+- Invoked by `upsert.ts` when persisting a `CardVariantImage`.
+- **Idempotent**: skip if `storageKey` already exists in storage AND the `sourceUrl` cache-buster matches what's stored. Re-download if either condition fails.
+- **Concurrency**: parallel-bounded (e.g. 5 in flight) to avoid hammering Bandai. Use `p-limit` or equivalent.
+- **Failures**: log + continue. The image record is still upserted with the source URL so a later retry can pick it up. **Do not** fail the whole ingestion run on image errors — the catalog data is more important than the images.
+- **Languages**: download for every language present in the source. Start with EN + FR (current scope), expand by adding language passes.
+
+**Cleanup**: orphan images (variant deleted upstream) are NOT auto-pruned in v1 to allow rollback. Add a separate `npm run ingest:prune-images` command later if disk usage becomes an issue.
+
+---
+
+## 8. Useful commands while working on the ingester
 
 ```bash
 # Inspect a single card file from the repo without cloning:
@@ -174,7 +210,7 @@ gh api 'repos/buhbbl/punk-records/git/trees/main?recursive=1' \
 
 ---
 
-## 8. When the source changes
+## 9. When the source changes
 
 punk-records' schema has been stable since launch but is not formally versioned. If a future scrape introduces breaking changes (new field, renamed field, new rarity label):
 

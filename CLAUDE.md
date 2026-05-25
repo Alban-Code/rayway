@@ -115,6 +115,22 @@ Ingestion flow: Pass 1 = EN (creates canonical `Type` codes by slugifying EN lab
 
 Note: punk-records groups variants by Bandai **product** (`pack_id`), not by TCG **set**, and `pack_id`s differ between languages. Our schema uses TCG sets (`OP01`, `ST15`…) derived from the prefix of the card code (stable across languages); pack info is not stored.
 
+#### Image self-hosting (decision 2026-05-25)
+
+We **download and self-host** card images during ingestion rather than serving Bandai's URLs directly. Reason: Bandai's image responses include `Cross-Origin-Resource-Policy: same-site`, which makes their images unembeddable from any other origin (browsers receive 200 but refuse to render). Discovered mid-implementation of the Cards UI slice. Workarounds (Vite dev proxy, server-side proxy in prod) are palliative — Bandai controls their URLs, headers, uptime, and rate-limiting tolerance. Self-host = control, robustness, predictable latency.
+
+Implementation strategy (next session's focus):
+
+- **Storage abstraction**: `ImageStorage` interface with implementations `LocalDiskStorage` (dev) and `S3Storage` (prod). Same ingestion code drives both.
+- **Local dev**: filesystem path TBD — likely `apps/api/storage/images/` (gitignored) or an out-of-tree dir referenced via env var (`IMAGE_STORAGE_PATH`).
+- **Prod**: S3-compatible store (R2 / S3 / GCS / B2). Choice deferred until hosting target is picked.
+- **Schema changes** on `CardVariantImage`: split current `imageUrl` into `sourceUrl` (Bandai origin, kept for re-download / change detection) + `storageKey` (internal path like `en/OP02-001_p1.png`). The served URL is computed at read time from a base URL env var (`IMAGE_BASE_URL`).
+- **Ingestion step**: idempotent HTTP download into the storage adapter. Skip if storage key exists and source URL's cache-buster (`?251017`) is unchanged. Compatible with the existing `IngestionRun.commitSha` incremental flow.
+- **Languages**: download for all languages the app serves (start with EN + FR; expand later). Stored under `<langCode>/<filename>` for clarity.
+- **Cleanup**: when re-running ingestion, orphan images (variant deleted upstream) should not be auto-pruned in v1 — keep around in case of rollback. Add a separate `prune` command later if needed.
+
+The previous Cards UI slice (filters with URL sync, `useCardsFilter` hook, chips, `CardThumb` skeleton) is paused mid-flight and will resume once images are servable from our own origin.
+
 ### API (`apps/api/src`)
 
 NestJS modules organized one-per-domain-feature. All routes are prefixed with `/api/` (set via `app.setGlobalPrefix('api')`); Swagger UI is exposed at `/api/docs`.
@@ -191,7 +207,21 @@ Modules status:
 
 ### Web (`apps/web/src`)
 
-React 19 SPA served by Vite. **Auth slice complete** (2026-05-24): sign-in / sign-up / sign-out / account view all functional via Better Auth. Data slices (Cards, Decks, etc.) not yet started — next slice will introduce React Query for domain data fetching.
+React 19 SPA served by Vite. **Auth slice complete** (2026-05-24): sign-in / sign-up / sign-out / account view all functional via Better Auth.
+
+**Cards UI slice — in progress, PAUSED 2026-05-25** at the "filters work, images blocked by CORP" stage. What's done:
+
+- React Query wired (`QueryClientProvider` in `main.tsx`, Devtools installed, `staleTime: 30_000`, `refetchOnWindowFocus: false`).
+- `api/cards.ts`: DTO types (`CardListItemDto`, `CardVariantDto`, `CardTypeDto`, `PaginatedCardsDto`), enum-like `as const` arrays + union types (`COLORS`, `CATEGORIES`, `RARITIES`), type guards (`isColor`, `isCategory`), `fetchCards(params)` builder using `URLSearchParams.append` for multi-value params.
+- `lib/hooks/useCards.ts` (thin wrapper around `useQuery({ queryKey: ['cards', params], queryFn })`).
+- `lib/hooks/useCardsFilter.ts`: custom hook centralizing URL→state and state→URL. Source of truth for filters = URL (no `useState` mirror). Exposes `handleColorClick(color)` and `setCategoryFilter(value)`.
+- `components/cards/{CardFilters, CardGrid, CardThumb}.tsx`. Filters styled with chips from the maquette (`.chip identity id-{UPPER_COLOR}` pattern). `CardThumb` wraps `<Link to={/cards/:code}>` so detail-page navigation is already wired.
+- `pages/CardsPage.tsx` is thin: reads filters via `useCardsFilter`, queries via `useCards`, composes `<CardFilters />` + `<CardGrid />`.
+- `styles/pages/cards.css` ported from `maquettes/Cards.html` + `shared.css` (`.filters-col`, `.filter-block`, `.chip*`, `.cards-grid`, `.card-tile*`).
+
+What blocked: Bandai's image servers send `Cross-Origin-Resource-Policy: same-site`, so `<img src="https://en.onepiece-cardgame.com/...">` returns 200 but the browser refuses to render. Decision (see Data ingestion §Image self-hosting) is to download images during ingestion and serve them ourselves — this work happens before the Cards UI slice resumes.
+
+To resume after self-hosting is done: (1) replace Bandai URLs with our served URLs in `CardThumb`, (2) build the detail page `/cards/:code` (endpoint `GET /api/cards/:code` already exists), (3) add `?page=N` pagination and `?q=...` search with debounce, (4) replace "Loading..." with a real skeleton.
 
 **Folder convention (type-first, established 2026-05-22):**
 

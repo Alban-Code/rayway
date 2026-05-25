@@ -1,4 +1,5 @@
 import { CardFilters } from "@/components/cards/CardFilters";
+import { CardGrid } from "@/components/cards/CardGrid";
 import { useCards } from "@/lib/hooks/useCards";
 import { useCardsFilter } from "@/lib/hooks/useCardsFilter";
 
@@ -13,9 +14,6 @@ export function CardsPage() {
 
     return (<div className="flex gap-5">
         <CardFilters />
-        <div>
-            {data.items.map((card) => <div key={card.code}>{card.name}</div>)}
-        </div>
-
+        <CardGrid cards={data} />
     </div>)
 }
