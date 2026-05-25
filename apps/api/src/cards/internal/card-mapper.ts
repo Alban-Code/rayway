@@ -3,6 +3,11 @@ import { pickByLang } from "../../common/lang/pick-by-lang.js";
 import { CardListItemDto } from "../dto/card-response.dto.js";
 import { CardWithRelations } from "./card-include.js";
 
+function buildImageUrl(key: string | null | undefined): string | null {
+    if (!key) return null;
+    return `${process.env.IMAGE_BASE_URL}/${key}`
+}
+
 export function mapCard(card: CardWithRelations, lang: string): CardListItemDto {
     const translation = pickByLang(card.translations, lang);
     const resolvedLang = translation?.languageCode ?? DEFAULT_LANG;
@@ -29,7 +34,7 @@ export function mapCard(card: CardWithRelations, lang: string): CardListItemDto 
             variantType: v.variantType,
             isPromo: v.isPromo,
             isStarter: v.isStarter,
-            imageUrl: pickByLang(v.images, lang)?.imageUrl ?? null,
+            imageUrl: buildImageUrl(pickByLang(v.images, lang)?.storageKey),
         })),
         setCode: card.set.code,
         language: resolvedLang,

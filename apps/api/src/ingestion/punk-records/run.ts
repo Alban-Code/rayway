@@ -26,6 +26,7 @@ import {
   IngestionRunSummary,
 } from './upsert.js';
 import { LANG_TO_FOLDER, SupportedLang } from './types.js';
+import { downloadImage } from './images.js';
 
 const LANGS: SupportedLang[] = ['en', 'fr'];
 const LANG_NAMES: Record<SupportedLang, string> = {
@@ -92,6 +93,15 @@ async function main(): Promise<void> {
           }
 
           await upsertCard(prisma, card, setIdsByCode, /* isPrimaryLanguage */ lang === 'en');
+
+          try {
+            for (const v of card.variants) {
+              await downloadImage(v.sourceUrl, v.storageKey, process.env.IMAGE_STORAGE_PATH!)
+            }
+          } catch (error: any) {
+            log.error({ event: 'image_download_failed', code: card.code, error: String(error) })
+          }
+
 
           summary.filesProcessed++;
           summary.cardsUpserted++;

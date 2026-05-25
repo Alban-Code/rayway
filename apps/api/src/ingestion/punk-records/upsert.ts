@@ -294,10 +294,12 @@ export async function upsertCard(
         create: {
           variantId: variantDb.id,
           languageCode: card.translation.languageCode,
-          imageUrl: variant.imageUrl
+          sourceUrl: variant.sourceUrl,
+          storageKey: variant.storageKey
         },
         update: {
-          imageUrl: variant.imageUrl
+          sourceUrl: variant.sourceUrl,
+          storageKey: variant.storageKey
         },
 
       })

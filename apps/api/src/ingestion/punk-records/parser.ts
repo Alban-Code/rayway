@@ -52,7 +52,8 @@ export interface NormalizedVariant {
   variantType: 'Regular' | 'Parallel' | 'Reprint'; // dérivé du suffixe
   isPromo: boolean;
   isStarter: boolean;
-  imageUrl: string;
+  sourceUrl: string;
+  storageKey: string;
   // Pas de marketPrice/inventoryPrice : punk-records ne les fournit pas.
 }
 
@@ -110,7 +111,8 @@ function normalize(card: PunkCard, languageCode: string): NormalizedCard {
         variantType: classifyVariant(card.id),
         isPromo: card.rarity === 'Promo',
         isStarter: setCode.startsWith('ST'),
-        imageUrl: card.img_full_url,
+        sourceUrl: card.img_full_url,
+        storageKey: `${languageCode}/${card.id}.png`
       },
     ],
   };

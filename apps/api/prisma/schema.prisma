@@ -251,7 +251,8 @@ model CardVariantImage {
   id           String @id @default(cuid())
   variantId    String
   languageCode String
-  imageUrl     String
+  sourceUrl    String
+  storageKey   String
 
   variant  CardVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
   language Language    @relation(fields: [languageCode], references: [code])
