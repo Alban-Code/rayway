@@ -1,52 +1,64 @@
-import { CATEGORIES, COLORS, type Category } from "@/api/cards";
-import { useCardsFilter } from "@/lib/hooks/useCardsFilter";
+import { Toggle } from "@/components/ui/toggle"
+import { COLORS, CATEGORIES, type Color } from "@/api/cards"
+import { useCardsFilter } from "@/lib/hooks/useCardsFilter"
+import type { CSSProperties } from "react"
+
+const COLOR_VARS: Record<Color, string> = {
+    Red: 'var(--id-red)',
+    Green: 'var(--id-green)',
+    Blue: 'var(--id-blue)',
+    Purple: 'var(--id-purple)',
+    Black: 'var(--id-black)',
+    Yellow: 'var(--id-yellow)',
+}
 
 export function CardFilters() {
     const { colors, category, handleColorClick, setCategoryFilter } = useCardsFilter()
 
     return (
-        <aside className="filters-col">
-            <div className="head">
-                <h2>Filters</h2>
-            </div>
+        <aside className="border-r border-border bg-card overflow-y-auto p-4 space-y-6">
+            <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                Filters
+            </h2>
 
-            <div className="filter-block">
-                <div className="label">Colors</div>
-                <div className="chip-grid">
-                    {COLORS.map((c) => {
-                        const active = colors.includes(c);
-                        const upper = c.toUpperCase();  // 'Red' → 'RED'
-                        return (
-                            <button
-                                key={c}
-                                type="button"
-                                className={`chip identity id-${upper}${active ? ' on' : ''}`}
-                                onClick={() => handleColorClick(c)}
-                            >
-                                <span className="dot" />{upper}
-                            </button>
-                        );
-                    })}
+            <section className="space-y-2">
+                <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                    Color
+                </h3>
+                <div className="flex flex-wrap gap-1.5">
+                    {COLORS.map((c) => (
+                        <Toggle
+                            key={c}
+                            size="sm"
+                            pressed={colors.includes(c)}
+                            onPressedChange={() => handleColorClick(c)}
+                            style={{ '--chip-color': COLOR_VARS[c] } as CSSProperties}
+                            className="gap-1.5 data-[state=on]:bg-[color-mix(in_oklch,var(--chip-color)_22%,transparent)] data-[state=on]:border-[color-mix(in_oklch,var(--chip-color)_50%,transparent)] data-[state=on]:text-[var(--chip-color)] border"
+                        >
+                            <span className="size-2 rounded-full" style={{ background: 'var(--chip-color)' }} />
+                            {c}
+                        </Toggle>
+                    ))}
                 </div>
-            </div>
+            </section>
 
-            <div className="filter-block">
-                <div className="label">Type</div>
-                <div className="chip-grid">
-                    {CATEGORIES.map((cat) => {
-                        const active = category === cat;
-                        return (
-                            <button
-                                key={cat}
-                                type="button"
-                                className={`chip${active ? ' on' : ''}`}
-                                onClick={() => setCategoryFilter(active ? undefined : cat)}
-                            >
-                                {cat}
-                            </button>
-                        );
-                    })}
+            <section className="space-y-2">
+                <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                    Category
+                </h3>
+                <div className="flex flex-wrap gap-1.5">
+                    {CATEGORIES.map((cat) => (
+                        <Toggle
+                            key={cat}
+                            size="sm"
+                            pressed={category === cat}
+                            onPressedChange={(pressed) => setCategoryFilter(pressed ? cat : undefined)}
+                            className="border"
+                        >
+                            {cat}
+                        </Toggle>
+                    ))}
                 </div>
-            </div>
+            </section>
         </aside>)
 }

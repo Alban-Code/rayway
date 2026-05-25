@@ -1,19 +1,38 @@
+import { ActiveFilterChips } from "@/components/cards/ActiveFilterChips";
 import { CardFilters } from "@/components/cards/CardFilters";
 import { CardGrid } from "@/components/cards/CardGrid";
+import { CardsSkeleton } from "@/components/cards/CardsSkeleton";
 import { useCards } from "@/lib/hooks/useCards";
 import { useCardsFilter } from "@/lib/hooks/useCardsFilter";
 
 export function CardsPage() {
 
     const filters = useCardsFilter()
-    const { data, isPending, isError } = useCards({ limit: 12, colors: filters.colors, category: filters.category })
+    const { data, isPending, isError } = useCards({ limit: 30, colors: filters.colors, category: filters.category })
 
-    if (isPending) return <div>Loading...</div>
+    return (
+        <div className="grid grid-cols-[260px_1fr] h-dvh overflow-hidden">
+            <CardFilters />
+            <main className="flex flex-col overflow-hidden">
+                <header className="flex items-end justify-between px-7 pt-5 pb-3 border-b border-border">
+                    <h1 className="text-3xl font-bold tracking-tight">
+                        Cards
+                        {data && (<span className="text-sm font-mono text-muted-foreground ml-2 font-normal"> · {data.total} results</span>)}
+                    </h1>
+                </header>
+                <ActiveFilterChips />
 
-    if (isError) return <div>Error</div>
+                <div className="flex-1 overflow-auto p-6">
+                    {isPending ? (
+                        <CardsSkeleton />
+                    ) : isError ? (
+                        <p className="text-destructive text-center p-10">Could not load cards</p>
+                    ) : (
+                        <CardGrid cards={data} />
+                    )}
+                </div>
+            </main>
 
-    return (<div className="flex gap-5">
-        <CardFilters />
-        <CardGrid cards={data} />
-    </div>)
+        </div>
+    )
 }

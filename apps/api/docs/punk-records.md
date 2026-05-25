@@ -156,37 +156,63 @@ Incremental state: `IngestionRun.commitSha` of the latest `success` row tells th
 
 ## 7. Image storage (self-hosting)
 
-**Decision 2026-05-25**: we download every card image during ingestion and serve it from our own origin. We never expose Bandai's URLs to clients.
+**Shipped 2026-05-25.** We download every card image during ingestion and serve it from our own origin. Bandai URLs are never exposed to clients.
 
-**Why**: Bandai's image responses include `Cross-Origin-Resource-Policy: same-site`, so browsers refuse to render them when embedded from another domain (200 HTTP but broken `<img>`). Beyond the immediate blocker, depending on a third-party CDN we don't control is fragile (URL changes, rate limits, uptime, hotlink rules).
+**Why**: Bandai's image responses include `Cross-Origin-Resource-Policy: same-site`, so browsers refuse to render them when embedded from another domain (200 HTTP but broken `<img>`). Beyond the immediate blocker, depending on a third-party CDN we don't control is fragile (URL changes, rate limits, uptime).
 
-**Storage abstraction**: an `ImageStorage` interface (in `apps/api/src/ingestion/punk-records/storage/`) with two implementations selected by env var:
+### Schema (`CardVariantImage`)
 
-- `LocalDiskStorage` — writes to a directory configured by `IMAGE_STORAGE_PATH` (default `apps/api/storage/images/`, gitignored). Used in dev.
-- `S3Storage` — writes to an S3-compatible bucket configured by `IMAGE_S3_BUCKET`, `IMAGE_S3_REGION`, `IMAGE_S3_ENDPOINT`. Used in prod. Hosting target (AWS S3 / Cloudflare R2 / GCS / Backblaze B2) deferred until the site itself is deployed.
+- `sourceUrl: String` — Bandai's absolute URL (with cache-buster `?251017`). Kept for traceability and eventual re-download.
+- `storageKey: String` — internal relative key, e.g. `en/OP02-001_p1.png`. Convention: `<langCode>/<variantCode>.png`.
+- The served URL is **computed at read time** in `cards/internal/card-mapper.ts` as `${process.env.IMAGE_BASE_URL}/${storageKey}` — never stored. Swapping storage backend or CDN domain = change one env var, zero data migration.
 
-**Storage key convention**: `<langCode>/<variantCode>.<ext>` — e.g. `en/OP02-001_p1.png`, `fr/OP02-001_p1.png`. The variant code is already stable across languages (per §3 quirk #4), so the same filename works per-language.
+### Downloader (`images.ts`)
 
-**Served URL** = `IMAGE_BASE_URL` + storage key. Example: `IMAGE_BASE_URL=http://localhost:3000/static/images` in dev (with NestJS serving the local dir statically), or `IMAGE_BASE_URL=https://cdn.rayway.app` in prod. The DB stores neither the served URL nor the full local path — only the **storage key**, so swapping storage backends or domains requires no data migration.
+A single exported function:
 
-**Schema impact** on `CardVariantImage`:
+```ts
+downloadImage(url: string, storageKey: string, storageRoot: string): Promise<'downloaded' | 'skipped'>
+```
 
-- Rename `imageUrl` → split into:
-  - `storageKey: String` — relative key, e.g. `en/OP02-001_p1.png`. Indexed.
-  - `sourceUrl: String` — Bandai's URL, kept for re-download detection (cache-buster query like `?251017` changes when Bandai re-uploads).
-- Add `downloadedAt: DateTime` for audit / staleness checks.
-- The served URL is computed at read time in the API mapper, not stored.
+- No Prisma import, no business logic — just HTTP + filesystem.
+- **Idempotent** via `fs.access(target)`: if the file exists locally, skip (returns `'skipped'`). v1 does NOT compare cache-busters — to force re-download, delete the local file. Good enough since Bandai rarely re-uploads.
+- Streams the response via `Readable.fromWeb(res.body) → pipeline() → createWriteStream(target)`. Throws on non-2xx or missing body.
+- ⚠️ No atomic rename (`.tmp` → `target`): a `Ctrl+C` mid-download leaves a partial file that the next run treats as "already there". Acceptable for v1; add `rename()` later if needed.
 
-**Download step in the ingestion pipeline**:
+### Wiring in `run.ts`
 
-- New file `image-downloader.ts` (no Prisma import, no business logic — just HTTP + storage).
-- Invoked by `upsert.ts` when persisting a `CardVariantImage`.
-- **Idempotent**: skip if `storageKey` already exists in storage AND the `sourceUrl` cache-buster matches what's stored. Re-download if either condition fails.
-- **Concurrency**: parallel-bounded (e.g. 5 in flight) to avoid hammering Bandai. Use `p-limit` or equivalent.
-- **Failures**: log + continue. The image record is still upserted with the source URL so a later retry can pick it up. **Do not** fail the whole ingestion run on image errors — the catalog data is more important than the images.
-- **Languages**: download for every language present in the source. Start with EN + FR (current scope), expand by adding language passes.
+After `upsertCard` returns (transaction committed), a serial loop downloads each variant's image:
 
-**Cleanup**: orphan images (variant deleted upstream) are NOT auto-pruned in v1 to allow rollback. Add a separate `npm run ingest:prune-images` command later if disk usage becomes an issue.
+```ts
+try {
+  for (const v of card.variants) {
+    await downloadImage(v.sourceUrl, v.storageKey, process.env.IMAGE_STORAGE_PATH!);
+  }
+} catch (error) {
+  log.error({ event: 'image_download_failed', code: card.code, error: String(error) });
+}
+```
+
+- Wrapped in its **own** `try/catch` so a network error doesn't increment `summary.errors` — the catalog row is fine, only the image failed.
+- **Serial, no `p-limit`.** Ingestion runs rarely; complexity not worth it.
+
+### Serving
+
+- **Dev**: `@nestjs/serve-static` mounted in `app.module.ts` with `rootPath: resolve(process.env.IMAGE_STORAGE_PATH!)` + `serveRoot: '/images'`. With `IMAGE_BASE_URL=http://localhost:3000/images`, the front fetches `http://localhost:3000/images/en/OP01-001.png`.
+- **Prod**: TBD. The likely path is to extract `downloadImage` behind an `ImageStorage` interface with `LocalDiskStorage` + `S3Storage` (R2 / S3 / GCS / B2) implementations, and point `IMAGE_BASE_URL` at the CDN. **Intentionally not built yet** (YAGNI until a hosting target is picked).
+
+### Env vars
+
+```
+IMAGE_STORAGE_PATH=./storage/images        # disk path, resolved to absolute at module load
+IMAGE_BASE_URL=http://localhost:3000/images # served URL prefix
+```
+
+`apps/api/.gitignore` excludes `/storage/`.
+
+### Cleanup
+
+Orphan images (variant deleted upstream) are **not** auto-pruned. Add `npm run ingest:prune-images` later if disk usage matters.
 
 ---
 

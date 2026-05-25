@@ -84,7 +84,7 @@ Model groups:
 
 - **Reference** — `Language` (PK: ISO 639-1 code, e.g. `"en"`, `"fr"`).
 - **Users** — `User` (minimal; auth fields TBD when an auth provider is chosen).
-- **Card catalog** — `CardSet`, `Card` (language-neutral stats), `CardTranslation` (name/effect/triggerEffect per language), `CardVariant` (printings), `CardVariantImage` (one URL per language).
+- **Card catalog** — `CardSet`, `Card` (language-neutral stats), `CardTranslation` (name/effect/triggerEffect per language), `CardVariant` (printings), `CardVariantImage` (`sourceUrl` + `storageKey` per language — see §Image self-hosting).
 - **Types** — `Type` + `TypeTranslation` + `CardType` join. Tribal categories printed on cards ("Straw Hat Crew", "Supernova"), with canonical slug codes + per-language labels. ⚠️ `CardType` is the **join table** between `Card` and `Type` — do not confuse with `Card.category` (Leader/Character/Event/Stage/Don).
 - **Tags** — `Tag` + `TagTranslation` + `CardTag` join. Semantic enrichment for RAG retrieval (NOT visible to players). Each `CardTag` has a `scope` (Main/Trigger), a `source` (Llm/Human/Official), and an optional confidence. `Tag.kind` distinguishes `Keyword` (officially printed: Rush, Blocker, Banish) from `Semantic` (custom: searcher, drawer, board_wipe).
 - **Formats** — `Format` + `FormatTranslation` + `FormatLegality` (time-bounded banlist with `effectiveAt`/`endsAt` and per-status `maxCopies`).
@@ -115,21 +115,19 @@ Ingestion flow: Pass 1 = EN (creates canonical `Type` codes by slugifying EN lab
 
 Note: punk-records groups variants by Bandai **product** (`pack_id`), not by TCG **set**, and `pack_id`s differ between languages. Our schema uses TCG sets (`OP01`, `ST15`…) derived from the prefix of the card code (stable across languages); pack info is not stored.
 
-#### Image self-hosting (decision 2026-05-25)
+#### Image self-hosting (shipped 2026-05-25)
 
-We **download and self-host** card images during ingestion rather than serving Bandai's URLs directly. Reason: Bandai's image responses include `Cross-Origin-Resource-Policy: same-site`, which makes their images unembeddable from any other origin (browsers receive 200 but refuse to render). Discovered mid-implementation of the Cards UI slice. Workarounds (Vite dev proxy, server-side proxy in prod) are palliative — Bandai controls their URLs, headers, uptime, and rate-limiting tolerance. Self-host = control, robustness, predictable latency.
+We **download and self-host** card images during ingestion rather than serving Bandai's URLs directly. Reason: Bandai's image responses include `Cross-Origin-Resource-Policy: same-site`, which makes their images unembeddable from any other origin (browsers receive 200 but refuse to render).
 
-Implementation strategy (next session's focus):
+Implementation:
 
-- **Storage abstraction**: `ImageStorage` interface with implementations `LocalDiskStorage` (dev) and `S3Storage` (prod). Same ingestion code drives both.
-- **Local dev**: filesystem path TBD — likely `apps/api/storage/images/` (gitignored) or an out-of-tree dir referenced via env var (`IMAGE_STORAGE_PATH`).
-- **Prod**: S3-compatible store (R2 / S3 / GCS / B2). Choice deferred until hosting target is picked.
-- **Schema changes** on `CardVariantImage`: split current `imageUrl` into `sourceUrl` (Bandai origin, kept for re-download / change detection) + `storageKey` (internal path like `en/OP02-001_p1.png`). The served URL is computed at read time from a base URL env var (`IMAGE_BASE_URL`).
-- **Ingestion step**: idempotent HTTP download into the storage adapter. Skip if storage key exists and source URL's cache-buster (`?251017`) is unchanged. Compatible with the existing `IngestionRun.commitSha` incremental flow.
-- **Languages**: download for all languages the app serves (start with EN + FR; expand later). Stored under `<langCode>/<filename>` for clarity.
-- **Cleanup**: when re-running ingestion, orphan images (variant deleted upstream) should not be auto-pruned in v1 — keep around in case of rollback. Add a separate `prune` command later if needed.
-
-The previous Cards UI slice (filters with URL sync, `useCardsFilter` hook, chips, `CardThumb` skeleton) is paused mid-flight and will resume once images are servable from our own origin.
+- **`CardVariantImage` schema**: `sourceUrl` (Bandai origin, with cache-buster `?251017`) + `storageKey` (internal path like `en/OP02-001_p1.png`). The served URL is computed at read time in `cards/internal/card-mapper.ts` as `${process.env.IMAGE_BASE_URL}/${storageKey}` — never stored.
+- **Downloader** (`ingestion/punk-records/images.ts`): a single function `downloadImage(url, storageKey, storageRoot)` that streams the response via `Readable.fromWeb(res.body)` + `pipeline()` into `createWriteStream(target)`. Skip-if-exists is a plain `fs.access(target)` check (no cache-buster comparison in v1 — Bandai rarely changes images; if needed, just delete the local file to force re-download).
+- **Wiring in `run.ts`**: after `upsertCard` returns (transaction committed), a `for (variant of card.variants)` loop calls `downloadImage(...)` serially, wrapped in its own `try/catch` so a network error doesn't fail the card. No concurrency / `p-limit` — ingestion is rare enough that serial is fine.
+- **Storage location**: `IMAGE_STORAGE_PATH=./storage/images` env var (in `apps/api/.env`, dir gitignored). Resolved to absolute at module load via `node:path` `resolve()`.
+- **Serving in dev**: `@nestjs/serve-static` mounted at `serveRoot: '/images'`. Front fetches `http://localhost:3000/images/en/OP01-001.png` via `IMAGE_BASE_URL=http://localhost:3000/images`. In prod, point `IMAGE_BASE_URL` to a CDN/S3 origin and no app code changes.
+- **Prod storage**: still TBD — when an S3-style backend is needed, extract `downloadImage` behind an `ImageStorage` interface with `LocalDiskStorage` + `S3Storage` implementations. Intentionally not done now (YAGNI).
+- **Orphan cleanup**: not implemented. Add a `prune` command later if disk usage matters.
 
 ### API (`apps/api/src`)
 
@@ -209,19 +207,35 @@ Modules status:
 
 React 19 SPA served by Vite. **Auth slice complete** (2026-05-24): sign-in / sign-up / sign-out / account view all functional via Better Auth.
 
-**Cards UI slice — in progress, PAUSED 2026-05-25** at the "filters work, images blocked by CORP" stage. What's done:
+**Cards UI slice — list view DONE (2026-05-25 under the new design-system strategy).** What's in place:
 
 - React Query wired (`QueryClientProvider` in `main.tsx`, Devtools installed, `staleTime: 30_000`, `refetchOnWindowFocus: false`).
 - `api/cards.ts`: DTO types (`CardListItemDto`, `CardVariantDto`, `CardTypeDto`, `PaginatedCardsDto`), enum-like `as const` arrays + union types (`COLORS`, `CATEGORIES`, `RARITIES`), type guards (`isColor`, `isCategory`), `fetchCards(params)` builder using `URLSearchParams.append` for multi-value params.
-- `lib/hooks/useCards.ts` (thin wrapper around `useQuery({ queryKey: ['cards', params], queryFn })`).
-- `lib/hooks/useCardsFilter.ts`: custom hook centralizing URL→state and state→URL. Source of truth for filters = URL (no `useState` mirror). Exposes `handleColorClick(color)` and `setCategoryFilter(value)`.
-- `components/cards/{CardFilters, CardGrid, CardThumb}.tsx`. Filters styled with chips from the maquette (`.chip identity id-{UPPER_COLOR}` pattern). `CardThumb` wraps `<Link to={/cards/:code}>` so detail-page navigation is already wired.
-- `pages/CardsPage.tsx` is thin: reads filters via `useCardsFilter`, queries via `useCards`, composes `<CardFilters />` + `<CardGrid />`.
-- `styles/pages/cards.css` ported from `maquettes/Cards.html` + `shared.css` (`.filters-col`, `.filter-block`, `.chip*`, `.cards-grid`, `.card-tile*`).
+- `lib/hooks/useCards.ts` — thin wrapper around `useQuery({ queryKey: ['cards', params], queryFn })`.
+- `lib/hooks/useCardsFilter.ts` — custom hook. Source of truth = URL (no `useState` mirror). Exposes `colors`, `category`, `activeCount`, `handleColorClick(color)`, `setCategoryFilter(value)`, `clearAll()`.
+- `lib/idStyle.ts` — `idColorStyle(colors: Color[])` helper. Maps `Color → 'var(--id-red)'`, etc., and returns `{ '--id-color-a', '--id-color-b' }` as inline style. Fallback to `var(--accent)` if no color; if mono-color, `b = a`.
+- `components/cards/CardThumb.tsx` — **the only signature visual.** Wraps `<Link to="/cards/:code">` around `.card-tile`. Injects `--id-color-a/b` (via `idColorStyle`) and `--art-image` (if `imageUrl`) in inline style. JSX renders top-bar, art (with `has-image` modifier), cost, type-tag, name, code.
+- `styles/pages/cards.css` — **only the `.card-tile` family** lives here (~130 lines). Bicolor gradient on `.art` (radial top-left on color-a, linear ramp toward color-b), bicolor top-bar (linear-gradient 90deg a→b), bicolor hover glow (two box-shadows offset left/right tinted a and b). `--id-color` alias points to `--id-color-a` so `:hover`/`.compare-check` keep working.
+- `components/cards/CardGrid.tsx` — pure Tailwind: `grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-3`.
+- `components/cards/CardFilters.tsx` — sidebar (`<aside>`) in Tailwind utilities. Color + Category sections use shadcn `<Toggle>` (`@/components/ui/toggle`). Color toggles inject `--chip-color` inline and consume it via `data-[state=on]:bg-[color-mix(in_oklch,var(--chip-color)_22%,transparent)]` etc. — pure Tailwind arbitrary values, no CSS class.
+- `components/cards/ActiveFilterChips.tsx` — bar of active filter chips using shadcn `<Badge>`. Returns `null` if `activeCount === 0`. Each badge has its own `--chip-color`; click on `×` calls `handleColorClick` / `setCategoryFilter(undefined)`. "Clear all" link at the right uses `clearAll()`.
+- `components/cards/CardsSkeleton.tsx` — 18 shadcn `<Skeleton>` cards (`aspect-[0.715/1]`) in the same grid layout as `CardGrid`. Avoids layout shift when data arrives.
+- `pages/CardsPage.tsx` — thin layout: `grid grid-cols-[260px_1fr] h-dvh overflow-hidden` → sidebar + main column. Main has header (title + count), `<ActiveFilterChips />`, and a scrollable area with the skeleton/error/grid ternary. **No early returns** — the layout (sidebar, header) stays mounted during loading.
+- shadcn primitives installed: `button`, `toggle`, `badge`, `skeleton`, `input` (input not used yet, reserved for search).
 
-What blocked: Bandai's image servers send `Cross-Origin-Resource-Policy: same-site`, so `<img src="https://en.onepiece-cardgame.com/...">` returns 200 but the browser refuses to render. Decision (see Data ingestion §Image self-hosting) is to download images during ingestion and serve them ourselves — this work happens before the Cards UI slice resumes.
+Images are served from our own origin (see Data ingestion §Image self-hosting) — the API mapper returns `${IMAGE_BASE_URL}/${storageKey}` as `imageUrl`. `CardThumb` consumes it via the `--art-image` CSS var.
 
-To resume after self-hosting is done: (1) replace Bandai URLs with our served URLs in `CardThumb`, (2) build the detail page `/cards/:code` (endpoint `GET /api/cards/:code` already exists), (3) add `?page=N` pagination and `?q=...` search with debounce, (4) replace "Loading..." with a real skeleton.
+Pattern to remember (will be reused for any visual signature with dynamic color):
+
+```tsx
+// 1. In the component, inject CSS vars via inline style
+<Link className="card-tile" style={idColorStyle(card.colors)}>...</Link>
+
+// 2. In cards.css, consume them with color-mix and fallbacks
+background: linear-gradient(90deg, var(--id-color-a, var(--accent)), var(--id-color-b, var(--accent)));
+```
+
+Next steps on this slice: (1) detail page `/cards/:code` (endpoint exists, returns `CardListItemDto`) ; (2) pagination `?page=N` (DTO already returns `page`/`limit`/`total`) ; (3) search `?q=...` (needs API extension) ; (4) language switcher `?lang=...` (API already supports it).
 
 **Folder convention (type-first, established 2026-05-22):**
 
@@ -243,11 +257,22 @@ Rules:
 - Dependency direction is `pages → components`, never the reverse. If a sub-component exposes a prop type, define it **in the component** and let the page import it from there.
 - Page components stay thin: they read URL params/session, compose sub-components, pass props. No JSX-heavy rendering at the page level.
 
-**Design system (3-bridge architecture):**
+**Design system (shadcn + Tailwind primary, custom CSS only when needed):**
 
-`src/styles/tokens.css` defines OKLCH colors per palette → `src/index.css` `@layer base` maps shadcn vars (`--primary`, `--border`, etc.) to Rayway tokens → `@theme inline` in `index.css` registers them with Tailwind v4 (`bg-primary` resolves to Rayway `--accent`). Result: shadcn `<Button>` and Rayway `.btn.primary` share the same colors automatically.
+The 5 ruling principles (decided 2026-05-25, after a first iteration where the maquette was treated as 1:1 SoT and most pages were styled with raw CSS — the result was a class proliferation that ignored the shadcn/Tailwind stack we had installed):
 
-For MVP, only the `devil-fruit` palette is wired (via `:root`); the 6 others stay dormant in `tokens.css` for later. Page-specific styles (e.g. `.auth-stage`, `.hero-pile`) live in `src/styles/pages/<page>.css`, ported from `maquettes/shared.css` on a per-page basis rather than translated to Tailwind utilities.
+1. **Generic UI components → shadcn.** Button, Input, Card, Badge, Dialog, Combobox, Popover, Tabs, Sheet, etc. When a new one is needed: `npx shadcn@latest add <component>`. Don't rewrite in CSS what shadcn already provides.
+2. **Layout → Tailwind utilities.** `grid grid-cols-[230px_1fr]`, `flex gap-4`, `h-dvh`, `overflow-hidden` — written inline on the JSX. Stop writing `.cards-page { display: grid; ... }` for a banal 2-column layout.
+3. **Theming → the 3-bridge stays.** `src/styles/tokens.css` defines OKLCH tokens → `src/index.css` `@layer base` maps shadcn vars (`--primary`, `--border`, etc.) to Rayway tokens → `@theme inline` registers them with Tailwind v4. So `bg-primary` / `border-border` resolve to your tokens automatically — never hardcode a color.
+4. **Custom CSS (in `styles/`) → signature visuals only.** Things with no shadcn equivalent that deserve abstraction: the `.card-tile` with its bicolor gradient via `--id-color-a/b`, hover glow, `:has()` dimming. Not for a 2-column layout, not for a button.
+5. **Maquette = visual inspiration, NOT spec.** Look at the spirit (dark + glow + OKLCH + display typo) and adapt. Don't try to reproduce HTML/CSS 1:1 — especially not the class names from `maquettes/shared.css`.
+
+Practical consequences:
+- `primitives.css` will gradually shrink (replaced by shadcn). Don't big-bang migrate; replace when you touch a screen.
+- `pages/cards.css` should only contain `.card-tile` + its sub-elements. Everything else (`.cards-page`, `.filters-col`, `.cards-head`, …) belongs in Tailwind utilities.
+- Existing pages (auth, account) stay as-is for now. Migrate them only when you next edit them.
+
+Only the `devil-fruit` palette is wired (via `:root`); the 6 others stay dormant in `tokens.css` for later.
 
 Stack for the first slice (auth + cards browsing):
 

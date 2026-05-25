@@ -1,5 +1,4 @@
 import { isCategory, isColor, type Category, type Color } from "@/api/cards";
-import type { ChangeEvent } from "react";
 import { useSearchParams } from "react-router";
 
 export function useCardsFilter() {
@@ -7,6 +6,8 @@ export function useCardsFilter() {
     const colors = searchParams.getAll('colors').filter(isColor)
     const categoryRaw = searchParams.get('category')
     const category = categoryRaw && isCategory(categoryRaw) ? categoryRaw : undefined
+
+    const activeCount = colors.length + (category ? 1 : 0)
 
     function setCategoryFilter(value: Category | undefined) {
         setSearchParams((prev) => {
@@ -27,5 +28,13 @@ export function useCardsFilter() {
         })
     }
 
-    return { colors, category, handleColorClick, setCategoryFilter }
+    function clearAll() {
+        setSearchParams((prev) => {
+            prev.delete('colors')
+            prev.delete('category')
+            return prev
+        })
+    }
+
+    return { colors, category, activeCount, handleColorClick, setCategoryFilter, clearAll }
 }
