@@ -19,13 +19,6 @@ export function CardDetailView({ card }: CardDetailViewProps) {
             >
                 <div className="top-bar" />
                 <div className={imageUrl ? "art has-image" : "art"} />
-                {card.cost !== null && <div className="cost">{card.cost}</div>}
-                <div className="type-tag">{card.category.toUpperCase()}</div>
-                <div className="name">{card.name}</div>
-                <div className="code">
-                    <span>{card.code}</span>
-                    <span>{card.rarity}</span>
-                </div>
             </section>
 
             <section className="flex flex-col gap-3.5">

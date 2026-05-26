@@ -207,15 +207,17 @@ Modules status:
 
 React 19 SPA served by Vite. **Auth slice complete** (2026-05-24): sign-in / sign-up / sign-out / account view all functional via Better Auth.
 
-**Cards UI slice — list view DONE (2026-05-25 under the new design-system strategy).** What's in place:
+**Cards UI slice — list view + detail panel + hover preview DONE (2026-05-26).** The detail view is a **non-modal side-sheet** that slides over the list, not a separate page. URL-driven, deep-linkable, browser-back closes it. The hover preview is text-dense (no image, full effect text) and lives inside `CardThumb`. See §Card detail panel and §Hover preview below for the full patterns.
+
+**What's in place on the list view:**
 
 - React Query wired (`QueryClientProvider` in `main.tsx`, Devtools installed, `staleTime: 30_000`, `refetchOnWindowFocus: false`).
 - `api/cards.ts`: DTO types (`CardListItemDto`, `CardVariantDto`, `CardTypeDto`, `PaginatedCardsDto`), enum-like `as const` arrays + union types (`COLORS`, `CATEGORIES`, `RARITIES`), type guards (`isColor`, `isCategory`), `fetchCards(params)` builder using `URLSearchParams.append` for multi-value params.
 - `lib/hooks/useCards.ts` — thin wrapper around `useQuery({ queryKey: ['cards', params], queryFn })`.
 - `lib/hooks/useCardsFilter.ts` — custom hook. Source of truth = URL (no `useState` mirror). Exposes `colors`, `category`, `activeCount`, `handleColorClick(color)`, `setCategoryFilter(value)`, `clearAll()`.
 - `lib/idStyle.ts` — `idColorStyle(colors: Color[])` helper. Maps `Color → 'var(--id-red)'`, etc., and returns `{ '--id-color-a', '--id-color-b' }` as inline style. Fallback to `var(--accent)` if no color; if mono-color, `b = a`.
-- `components/cards/CardThumb.tsx` — **the only signature visual.** Wraps `<Link to="/cards/:code">` around `.card-tile`. Injects `--id-color-a/b` (via `idColorStyle`) and `--art-image` (if `imageUrl`) in inline style. JSX renders top-bar, art (with `has-image` modifier), cost, type-tag, name, code.
-- `styles/pages/cards.css` — **only the `.card-tile` family** lives here (~130 lines). Bicolor gradient on `.art` (radial top-left on color-a, linear ramp toward color-b), bicolor top-bar (linear-gradient 90deg a→b), bicolor hover glow (two box-shadows offset left/right tinted a and b). `--id-color` alias points to `--id-color-a` so `:hover`/`.compare-check` keep working.
+- `components/cards/CardThumb.tsx` — **the only signature visual.** Wraps `<Link to="/cards/:code">` around `.card-tile`, itself wrapped in `<HoverCard>` (see §Hover preview). Injects `--id-color-a/b` (via `idColorStyle`) and `--art-image` (if `imageUrl`) in inline style. JSX renders **only `top-bar` and `art`** — the printed card image already shows cost/name/type/code, so no overlays.
+- `styles/pages/cards.css` — **only the `.card-tile` family** lives here (~100 lines). Bicolor gradient on `.art` (radial top-left on color-a, linear ramp toward color-b), bicolor top-bar (linear-gradient 90deg a→b), bicolor hover glow (two box-shadows offset left/right tinted a and b). `--id-color` alias points to `--id-color-a` so `:hover`/`.compare-check` keep working. **No `width: 100%`** on `.card-tile` — block + grid/flex parent handle sizing, and removing it lets Tailwind utilities like `w-[140px]` apply without specificity battles (Tailwind v4 utilities are in `@layer utilities`, lose to unlayered CSS).
 - `components/cards/CardGrid.tsx` — pure Tailwind: `grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-3`.
 - `components/cards/CardFilters.tsx` — sidebar (`<aside>`) in Tailwind utilities. Color + Category sections use shadcn `<Toggle>` (`@/components/ui/toggle`). Color toggles inject `--chip-color` inline and consume it via `data-[state=on]:bg-[color-mix(in_oklch,var(--chip-color)_22%,transparent)]` etc. — pure Tailwind arbitrary values, no CSS class.
 - `components/cards/ActiveFilterChips.tsx` — bar of active filter chips using shadcn `<Badge>`. Returns `null` if `activeCount === 0`. Each badge has its own `--chip-color`; click on `×` calls `handleColorClick` / `setCategoryFilter(undefined)`. "Clear all" link at the right uses `clearAll()`.
@@ -235,7 +237,144 @@ Pattern to remember (will be reused for any visual signature with dynamic color)
 background: linear-gradient(90deg, var(--id-color-a, var(--accent)), var(--id-color-b, var(--accent)));
 ```
 
-Next steps on this slice: (1) detail page `/cards/:code` (endpoint exists, returns `CardListItemDto`) ; (2) pagination `?page=N` (DTO already returns `page`/`limit`/`total`) ; (3) search `?q=...` (needs API extension) ; (4) language switcher `?lang=...` (API already supports it).
+### Card detail panel (2026-05-26)
+
+The detail view is a side-sheet, not a separate page. URL pattern: `/cards/:code` is a **nested route** under `/cards`, not a sibling.
+
+```tsx
+// App.tsx
+{ path: "/cards", element: <CardsPage />, children: [
+    { path: ":code", element: <CardDetailSheet /> }
+]}
+```
+
+`CardsPage` renders `<Outlet />` inside its layout. When the URL matches `/cards/:code`, the Outlet mounts `CardDetailSheet`. The "panel is open" state is **derived from the URL** (`useMatch('/cards/:code')`), never stored in a `useState`. Browser back, link sharing, and inter-card navigation all just work.
+
+**Files:**
+
+- `api/cards.ts` → `fetchCard(code)` (returns `CardListItemDto`, same shape as the list).
+- `lib/hooks/useCardDetail.ts` → `useQuery({ queryKey: ['card', code], queryFn, placeholderData: keepPreviousData })`. The `keepPreviousData` is **critical**: without it, switching between cards flashes the skeleton each time.
+- `components/cards/CardDetailSheet.tsx` → smart wrapper. Reads `:code` via `useParams`, fetches, renders `<Sheet>`. Closes via `navigate('/cards')` on Escape / ✕ click.
+- `components/cards/CardDetailView.tsx` → pure presentation, receives `card` as prop. Single-column flex layout with image on top (`.card-tile.card-tile--static`, `w-full max-w-[360px]` — `w-full` is required since `.card-tile` no longer carries `width: 100%`), then Header / Stats / Chips / Effects / Variants. JSX renders `top-bar` + `art` only (no overlays).
+- `components/cards/CardDetail{Header,Stats,Chips,Effects,Variants}.tsx` → one file per section.
+
+**Sheet customization (`components/ui/sheet.tsx`):**
+
+- Added a `showOverlay?: boolean` prop (default `true`). `CardDetailSheet` passes `showOverlay={false}` → no dim, no blur.
+- **Removed `data-[side=left]:sm:max-w-sm data-[side=right]:sm:max-w-sm` from the default `className`.** Reason: these `data-[side=...]:` variants compile to selectors with **higher specificity** (attribute + class) than a plain `sm:max-w-2xl` passed via `cn()`. `tailwind-merge` can't help — it resolves conflicts at equal specificity only, and the data-variant always wins. Symptom: your `sm:max-w-2xl` looks correct in the generated CSS but is crossed out in devtools.
+- General lesson: when a shadcn component class doesn't override as expected, suspect specificity from `data-[...]:` / `aria-[...]:` / `group-data-[...]:` variants. The fix is editing the shadcn file (which lives in your repo for exactly this reason), not adding `!` everywhere.
+
+**Non-modal behavior:**
+
+```tsx
+<Sheet modal={false} open={true} onOpenChange={(open) => { if (!open) navigate('/cards'); }}>
+  <SheetContent
+    side="right"
+    showOverlay={false}
+    onInteractOutside={(e) => e.preventDefault()}
+    className="sm:max-w-2xl w-full overflow-y-auto"
+  >
+```
+
+- `modal={false}` disables Radix's focus trap → the user can interact with the list behind.
+- `onInteractOutside.preventDefault()` is **also required** — without it, clicking the list closes the Sheet, defeating the purpose. With it: clicking another `CardThumb` changes the URL (`/cards/:newCode`), `useParams` re-runs, `useCardDetail` re-fetches, the panel **updates in place without ever closing**. Escape and the ✕ button remain the only ways to close.
+
+**Layout shift (list grid shrinks when panel opens):**
+
+In `CardsPage`, the `<main>` element gets a dynamic right-padding when the panel is open:
+
+```tsx
+const isDetailOpen = !!useMatch('/cards/:code')
+<main className={cn(
+  "flex flex-col overflow-hidden transition-[padding] duration-300 ease-out",
+  isDetailOpen && "sm:pr-[min(100vw,42rem)]"
+)}>
+```
+
+⚠️ **The padding value (`42rem`) and the Sheet's `sm:max-w-2xl` (also 42rem) MUST stay in sync.** Otherwise the grid either overflows under the panel or leaves dead space. If you change one, change the other. Eventually candidate for a shared CSS var (`--w-detail-panel`) once it proliferates.
+
+**Animation polish:**
+
+- The `<CardDetailView>` is wrapped in `<div key={card.code} className="animate-in fade-in-50 duration-200">`. The `key` forces a remount on each new card → replays the `animate-in` animation = smooth fade between cards. Combined with `keepPreviousData`, no skeleton flash between selections.
+- Skeleton only shows when truly empty: `isPending && !data` (since `placeholderData` keeps `data` truthy during refetches).
+
+**Static card-tile in the panel:**
+
+Reuses the `.card-tile` class from the grid, plus a new BEM modifier `card-tile--static` (in `pages/cards.css`) that:
+- Disables the hover transform/glow (via `.card-tile:not(.card-tile--static):hover { ... }`).
+- Sets `cursor: default`.
+- Adds a permanent colored ring + glow using `--id-color-a`.
+
+**Panel-in-panel surface hierarchy:**
+
+The Sheet body uses `bg-popover` (= `--bg-panel-2`). Inner sections (Stats / Effects / Variants) use `bg-card` (= `--bg-panel`) + `border border-border` + `rounded-xl` + `px-3.5 py-3`. Two surface levels without shadows. Header and Chips stay "at the floor level" (no case) intentionally — if everything is a case, nothing stands out.
+
+**Maquette-faithful typography (from `maquettes/Cards.html`):**
+
+- Section labels: `text-[9px] uppercase tracking-[0.08em] font-bold text-muted-foreground`
+- Stat values: `text-xl font-display font-bold tabular-nums leading-none` — `tabular-nums` prevents digit jitter, `leading-none` keeps the label/value pair tight.
+- Effect body: `text-[12.5px] leading-[1.55]`
+- Variants: mini-cards in `grid grid-cols-4 gap-2`, each at `aspect-[0.715/1]`, with `<img loading="lazy">` and a black `bg-black/65 backdrop-blur-sm` footer for the variantType.
+
+**Card effects with `<br/>`:**
+
+The DB stores raw `<br/>` tags inside `effect` / `triggerEffect`. `CardDetailEffects` uses a local `normalizeBreaks()` helper that replaces `<br\s*\/?>` (case-insensitive) with `\n`, and the `<p>` uses `whitespace-pre-line`. **Do not use `dangerouslySetInnerHTML`** — even on "trusted" DB content, you're one bad row away from XSS. Transform-to-text + CSS rendering is safer and equally effective for this use case.
+
+### Hover preview (2026-05-26)
+
+Hover on a grid tile pops a side card with the **full effect text** of the card. No image (the tile under the cursor and the detail panel already show it — duplicating pollutes). Text-only, info-dense.
+
+**Implementation lives directly in `CardThumb.tsx`** — no separate `CardHoverCard.tsx` component, the wrapping is trivial enough to inline:
+
+```tsx
+<HoverCard openDelay={300} closeDelay={100}>
+  <HoverCardTrigger asChild>
+    <Link to={`/cards/${card.code}`} className="card-tile" style={style}>
+      <div className="top-bar" />
+      <div className={imageUrl ? "art has-image" : "art"} />
+    </Link>
+  </HoverCardTrigger>
+  <HoverCardContent
+    side="right"
+    align="start"
+    sideOffset={8}
+    className="w-[460px] p-3 max-h-[80vh] overflow-y-auto"
+    style={idColorStyle(card.colors)}
+  >
+    <div className="flex flex-col gap-3">
+      <CardDetailHeader card={card} />
+      <CardDetailStats card={card} />
+      <CardDetailChips card={card} />
+      <CardDetailEffects card={card} />
+    </div>
+  </HoverCardContent>
+</HoverCard>
+```
+
+**Design decisions:**
+
+- **No image, no `line-clamp`.** Full `effect` + `triggerEffect` are the most valuable info. If they get long, `max-h-[80vh] overflow-y-auto` scrolls instead of truncating.
+- **No `CardDetailVariants`** in the preview — it'd be visually heavy and the panel covers it.
+- **Reuses the detail sub-components** (`CardDetailHeader/Stats/Chips/Effects`) — same DTO shape, no compact-mode prop needed.
+- **`openDelay={300}` / `closeDelay={100}`** — without `openDelay`, hovering across the grid flickers a popover at every tile. 300ms is the idiomatic floor.
+
+**Pitfalls hit during the build (keep in mind for future Radix work):**
+
+- **`<HoverCardTrigger asChild>` is mandatory.** Without `asChild`, Radix wraps your `<Link>` in a `<button>`, breaking ctrl-click and a11y. The Slot pattern lets Radix apply its props directly to the `<Link>`.
+- **CSS vars do NOT propagate through Radix Portals.** `style={idColorStyle(...)}` on the Trigger is invisible to the Content (which renders in a portal at `<body>` root). Re-inject `style={idColorStyle(card.colors)}` on the `<HoverCardContent>` itself if you want bicolor styling there. Here we don't really need it (text-only, no `.card-tile` inside) but it's harmless and future-proof.
+- **Tailwind v4 utility vs unlayered CSS.** `w-[140px]` (Tailwind, `@layer utilities`) was getting beaten by `.card-tile { width: 100%; }` (unlayered) in an earlier iteration that did include the static image in the popover. **Unlayered rules outrank `@layer utilities` regardless of specificity.** Fix: remove the conflicting unlayered rule (or wrap the consumer in `@layer components`). The lesson generalizes — if a Tailwind utility silently doesn't apply, check whether an unlayered CSS rule defines the same property.
+
+**Cleanup that came with this slice:**
+
+`.card-tile .cost`, `.card-tile .type-tag`, `.card-tile .name`, `.card-tile .code` were removed from `cards.css` and from `CardThumb.tsx` + `CardDetailView.tsx`. The printed card image already shows all that info — overlaying it was noise. Note `AuthHero.tsx` has its own `.hc .cost` style (different selector), unaffected.
+
+### Next steps on the Cards slice
+
+By suggested order:
+
+1. **Pagination `?page=N`** — DTO already returns `page`/`limit`/`total`. Add `page` to `useCardsFilter`. Reuse `placeholderData: keepPreviousData` (already installed pattern) on the list query for smooth page transitions.
+2. **Search `?q=...`** — debounce via `useDeferredValue` or custom hook. Needs API extension on `/api/cards`.
+3. **Language switcher `?lang=fr|en|jp|...`** — DTO already returns `language`, API already supports the param.
 
 **Folder convention (type-first, established 2026-05-22):**
 
