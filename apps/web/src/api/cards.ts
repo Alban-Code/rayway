@@ -100,3 +100,9 @@ export async function fetchCards(params: CardListParams = {}): Promise<Paginated
     return api<PaginatedCardsDto>(path)
 }
 
+export async function fetchCard(code: string): Promise<CardListItemDto> {
+    const path = `/cards/${code}`
+
+    return api<CardListItemDto>(path)
+}
+

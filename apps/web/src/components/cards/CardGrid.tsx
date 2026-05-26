@@ -7,7 +7,7 @@ type CardGridProps = {
 
 export function CardGrid({ cards }: CardGridProps) {
     return (
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-3">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-6">
             {cards.items.map((card) => <CardThumb key={card.code} card={card} />)}
         </div>
     )

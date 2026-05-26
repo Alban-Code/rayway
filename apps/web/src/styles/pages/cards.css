@@ -116,7 +116,7 @@
     z-index: 2;
 }
 
-.card-tile:hover {
+.card-tile:not(.card-tile--static):hover {
     transform: translateY(-4px) scale(1.02);
     z-index: 5;
     box-shadow:
@@ -125,6 +125,15 @@
         -16px 0 calc(38px * var(--glow-mult, 1)) color-mix(in oklch, var(--id-color-a, var(--accent)) calc(30% * var(--glow-mult, 1)), transparent),
         16px 0 calc(38px * var(--glow-mult, 1)) color-mix(in oklch, var(--id-color-b, var(--accent)) calc(30% * var(--glow-mult, 1)), transparent),
         var(--shadow-card-hover);
+}
+
+.card-tile.card-tile--static {
+    cursor: default;
+    border-color: color-mix(in oklch, var(--id-color-a, var(--accent)) 40%, transparent);
+    box-shadow:
+        0 0 0 1px color-mix(in oklch, var(--id-color-a, var(--accent)) 55%, transparent),
+        0 0 40px color-mix(in oklch, var(--id-color-a, var(--accent)) 15%, transparent),
+        var(--shadow-card-rest);
 }
 
 .card-tile .compare-check {

@@ -4,16 +4,24 @@ import { CardGrid } from "@/components/cards/CardGrid";
 import { CardsSkeleton } from "@/components/cards/CardsSkeleton";
 import { useCards } from "@/lib/hooks/useCards";
 import { useCardsFilter } from "@/lib/hooks/useCardsFilter";
+import { cn } from "@/lib/utils";
+import { Outlet, useMatch } from "react-router";
 
 export function CardsPage() {
 
     const filters = useCardsFilter()
     const { data, isPending, isError } = useCards({ limit: 30, colors: filters.colors, category: filters.category })
+    const isDetailOpen = !!useMatch('/cards/:code')
 
     return (
         <div className="grid grid-cols-[260px_1fr] h-dvh overflow-hidden">
             <CardFilters />
-            <main className="flex flex-col overflow-hidden">
+            <main
+                className={cn(
+                    "flex flex-col overflow-hidden transition-[padding] duration-300 ease-out",
+                    isDetailOpen && "sm:pr-[min(100vw,42rem)]"
+                )}
+            >
                 <header className="flex items-end justify-between px-7 pt-5 pb-3 border-b border-border">
                     <h1 className="text-3xl font-bold tracking-tight">
                         Cards
@@ -32,6 +40,7 @@ export function CardsPage() {
                     )}
                 </div>
             </main>
+            <Outlet />
 
         </div>
     )
