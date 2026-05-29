@@ -1,6 +1,6 @@
 import type { CardListItemDto } from "@/api/cards"
 import { idColorStyle } from "@/lib/idStyle"
-import { Link } from "react-router"
+import { Link, useLocation } from "react-router"
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
 import { CardDetailHeader } from "@/components/cards/CardDetailHeader"
 import { CardDetailStats } from "@/components/cards/CardDetailStats"
@@ -19,11 +19,13 @@ export function CardThumb({ card }: CardThumbProps) {
         ...(imageUrl ? { '--art-image': `url(${imageUrl})` } : {})
     }
 
+    const location = useLocation()
+
 
     return (
         <HoverCard openDelay={300} closeDelay={100}>
             <HoverCardTrigger asChild>
-                <Link to={`/cards/${card.code}`} className="card-tile" style={style}>
+                <Link to={{ pathname: `/cards/${card.code}`, search: location.search }} className="card-tile" style={style}>
                     <div className="top-bar" />
                     <div className={imageUrl ? "art has-image" : "art"} />
                 </Link>

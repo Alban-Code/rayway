@@ -1,6 +1,6 @@
 import { CardDetailView } from "@/components/cards/CardDetailView"
 import { useCardDetail } from "@/lib/hooks/useCardDetail"
-import { useNavigate, useParams } from "react-router"
+import { useLocation, useNavigate, useParams } from "react-router"
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { CardDetailSkeleton } from "@/components/cards/CardDetailSkeleton";
 
@@ -9,12 +9,13 @@ export function CardDetailSheet() {
     const { code } = useParams<{ code: string }>();
     const navigate = useNavigate();
     const { data, isPending, error } = useCardDetail(code!);
+    const location = useLocation()
 
     return (
         <Sheet
             modal={false}
             open={true}
-            onOpenChange={(open) => { if (!open) navigate('/cards'); }}
+            onOpenChange={(open) => { if (!open) navigate({ pathname: '/cards', search: location.search }); }}
         >
             <SheetContent
                 side="right"
