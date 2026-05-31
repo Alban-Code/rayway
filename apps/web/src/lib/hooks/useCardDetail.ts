@@ -1,10 +1,10 @@
 import { fetchCard } from "@/api/cards";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
-export function useCardDetail(code: string) {
+export function useCardDetail(code: string, lang: string) {
     return useQuery({
-        queryKey: ['card', code],
-        queryFn: () => fetchCard(code),
+        queryKey: ['card', code, lang],
+        queryFn: () => fetchCard(code, lang),
         placeholderData: keepPreviousData,
     })
 }

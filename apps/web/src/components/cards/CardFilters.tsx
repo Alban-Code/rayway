@@ -2,6 +2,7 @@ import { Toggle } from "@/components/ui/toggle"
 import { COLORS, CATEGORIES, type Color } from "@/api/cards"
 import { useCardsFilter } from "@/lib/hooks/useCardsFilter"
 import type { CSSProperties } from "react"
+import { CardSearch } from "@/components/cards/CardSearch"
 
 const COLOR_VARS: Record<Color, string> = {
     Red: 'var(--id-red)',
@@ -20,6 +21,13 @@ export function CardFilters() {
             <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
                 Filters
             </h2>
+
+            <section className="space-y-2">
+                <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                    Search
+                </h3>
+                <CardSearch />
+            </section>
 
             <section className="space-y-2">
                 <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">

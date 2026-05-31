@@ -1,5 +1,15 @@
 import { api } from "./client";
 
+export const LANGUAGES = [
+    { code: "en", label: "English" },
+    { code: "fr", label: "Français" }
+] as const
+export type LangCode = typeof LANGUAGES[number]["code"]
+
+export function isLang(value: string): value is LangCode {
+    return (LANGUAGES.map(({ code }) => code) as string[]).includes(value)
+}
+
 export const COLORS = ["Red", "Green", "Blue", "Purple", "Yellow", "Black"] as const;
 export type Color = typeof COLORS[number];
 
@@ -80,7 +90,8 @@ export type CardListParams = {
     limit?: number
     lang?: string
     colors?: Color[]
-    category?: Category
+    category?: Category,
+    q?: string
 }
 
 export async function fetchCards(params: CardListParams = {}): Promise<PaginatedCardsDto> {
@@ -95,13 +106,16 @@ export async function fetchCards(params: CardListParams = {}): Promise<Paginated
 
     if (params.category !== undefined) queryString.set('category', params.category)
 
+    if (params.q) queryString.set('q', params.q)
+
     const path = `/cards${queryString.toString() ? `?${queryString}` : ''}`
 
     return api<PaginatedCardsDto>(path)
 }
 
-export async function fetchCard(code: string): Promise<CardListItemDto> {
-    const path = `/cards/${code}`
+export async function fetchCard(code: string, lang?: string): Promise<CardListItemDto> {
+    const qs = lang && lang !== "en" ? `?lang=${lang}` : ''
+    const path = `/cards/${code}${qs}`
 
     return api<CardListItemDto>(path)
 }

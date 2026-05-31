@@ -8,6 +8,8 @@ import { cn } from "@/lib/utils";
 import { Outlet, useMatch } from "react-router";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationEllipsis, PaginationPrevious } from "@/components/ui/pagination";
 import { useEffect, useRef } from "react";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { isLang, LANGUAGES } from "@/api/cards";
 
 function getPageRange(current: number, total: number): (number | 'ellipsis')[] {
     // Cas A : peu de pages, on affiche tout
@@ -30,9 +32,8 @@ function getPageRange(current: number, total: number): (number | 'ellipsis')[] {
 }
 
 export function CardsPage() {
-
     const filters = useCardsFilter()
-    const { data, isPending, isError } = useCards({ limit: 30, colors: filters.colors, category: filters.category, page: filters.page })
+    const { data, isPending, isError } = useCards({ limit: 30, colors: filters.colors, category: filters.category, page: filters.page, q: filters.q, lang: filters.lang })
     const totalPages = data ? Math.ceil(data.total / data.limit) : 0
     const isFirstPage = filters.page === 1
     const isLastPage = filters.page === totalPages
@@ -58,6 +59,17 @@ export function CardsPage() {
                         Cards
                         {data && (<span className="text-sm font-mono text-muted-foreground ml-2 font-normal"> · {data.total} results</span>)}
                     </h1>
+                    <Select value={filters.lang} onValueChange={(v) => { if (isLang(v)) filters.setLang(v) }}>
+                        <SelectTrigger>
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectGroup>
+                                <SelectLabel>Languages</SelectLabel>
+                                {LANGUAGES.map(({ code, label }) => (<SelectItem key={code} value={code}>{label}</SelectItem>))}
+                            </SelectGroup>
+                        </SelectContent>
+                    </Select>
                 </header>
                 <ActiveFilterChips />
 

@@ -3,12 +3,14 @@ import { useCardDetail } from "@/lib/hooks/useCardDetail"
 import { useLocation, useNavigate, useParams } from "react-router"
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { CardDetailSkeleton } from "@/components/cards/CardDetailSkeleton";
+import { useCardsFilter } from "@/lib/hooks/useCardsFilter";
 
 export function CardDetailSheet() {
 
+    const { lang } = useCardsFilter()
     const { code } = useParams<{ code: string }>();
     const navigate = useNavigate();
-    const { data, isPending, error } = useCardDetail(code!);
+    const { data, isPending, error } = useCardDetail(code!, lang);
     const location = useLocation()
 
     return (
