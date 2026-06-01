@@ -1,4 +1,4 @@
-import { isCategory, isColor, isLang, type Category, type Color, type LangCode } from "@/api/cards";
+import { isAttribute, isCategory, isColor, isLang, type Attribute, type Category, type Color, type LangCode } from "@/api/cards";
 import { useSearchParams } from "react-router";
 
 export function useCardsFilter() {
@@ -6,13 +6,15 @@ export function useCardsFilter() {
     const colors = searchParams.getAll('colors').filter(isColor)
     const categoryRaw = searchParams.get('category')
     const category = categoryRaw && isCategory(categoryRaw) ? categoryRaw : undefined
+    const attributeRaw = searchParams.get('attribute')
+    const attribute = attributeRaw && isAttribute(attributeRaw) ? attributeRaw : undefined
     const pageRaw = searchParams.get('page')
     const page = pageRaw ? Math.max(1, Number(pageRaw)) : 1
     const q = searchParams.get('q') ?? ''
     const langRaw = searchParams.get('lang')
     const lang = langRaw && isLang(langRaw) ? langRaw : "en"
 
-    const activeCount = colors.length + (category ? 1 : 0) + (q.length > 0 ? 1 : 0)
+    const activeCount = colors.length + (category ? 1 : 0) + (q.length > 0 ? 1 : 0) + (attribute ? 1 : 0)
 
     function setCategoryFilter(value: Category | undefined) {
         setSearchParams((prev) => {
@@ -21,7 +23,15 @@ export function useCardsFilter() {
             else prev.set('category', value)
             return prev
         })
+    }
 
+    function setAttributeFilter(value: Attribute | undefined) {
+        setSearchParams((prev) => {
+            prev.delete('page')
+            if (!value) prev.delete('attribute')
+            else prev.set('attribute', value)
+            return prev
+        })
     }
 
     function handleColorClick(color: Color) {
@@ -49,6 +59,7 @@ export function useCardsFilter() {
             prev.delete('category')
             prev.delete('page')
             prev.delete('q')
+            prev.delete('attribute')
             return prev
         })
     }
@@ -64,11 +75,12 @@ export function useCardsFilter() {
 
     function setLang(value: LangCode) {
         setSearchParams((prev) => {
+            prev.delete('page')
             if (value == "en") prev.delete('lang')
             else prev.set('lang', value)
             return prev
         })
     }
 
-    return { colors, category, activeCount, page, q, lang, handleColorClick, setCategoryFilter, clearAll, setPage, setSearch, setLang }
+    return { colors, category, attribute, activeCount, page, q, lang, handleColorClick, setCategoryFilter, setAttributeFilter, clearAll, setPage, setSearch, setLang }
 }

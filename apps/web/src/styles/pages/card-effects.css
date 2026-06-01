@@ -1,0 +1,41 @@
+/* =============================================================
+   Card effect rich-text — printed-card keyword labels.
+   Consumed by CardDetailEffects (detail sheet + hover preview)
+   via the renderEffect() tokenizer. Signature visual → custom CSS.
+
+   Class contract emitted by renderEffect():
+     [..]            → <span class="fx-kw">…</span>
+     [DON!! ..]      → <span class="fx-kw fx-kw--don">…</span>
+     {..}            → <span class="fx-type">…</span>
+   (brackets/braces stripped — the label replaces them, like the card)
+   ============================================================= */
+
+/* [Jouée] [Bloqueur] [Initiative] [Exil] … — the iconic black label */
+.fx-kw {
+    display: inline-block;
+    padding: 0.04em 0.5em;
+    margin: 0 0.12em;
+    border-radius: var(--r-sm);
+    background: var(--kw-bg);
+    color: var(--kw-fg);
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 0.9em;
+    line-height: 1.4;
+    letter-spacing: var(--tracking-snug);
+    white-space: nowrap;
+    box-shadow: var(--shadow-1);
+}
+
+/* DON!! cost — brand accent so it pops (gameplay-critical) */
+.fx-kw--don {
+    background: var(--accent-hi);
+    color: var(--accent-fg);
+    box-shadow: 0 0 10px color-mix(in oklch, var(--accent-glow) 25%, transparent);
+}
+
+/* {Tribu} type references — emphasised text, not a pill */
+.fx-type {
+    font-weight: 600;
+    color: var(--accent-hi);
+}

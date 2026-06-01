@@ -1,5 +1,5 @@
 import { Toggle } from "@/components/ui/toggle"
-import { COLORS, CATEGORIES, type Color } from "@/api/cards"
+import { COLORS, CATEGORIES, ATTRIBUTES, type Color } from "@/api/cards"
 import { useCardsFilter } from "@/lib/hooks/useCardsFilter"
 import type { CSSProperties } from "react"
 import { CardSearch } from "@/components/cards/CardSearch"
@@ -14,7 +14,7 @@ const COLOR_VARS: Record<Color, string> = {
 }
 
 export function CardFilters() {
-    const { colors, category, handleColorClick, setCategoryFilter } = useCardsFilter()
+    const { colors, category, attribute, handleColorClick, setCategoryFilter, setAttributeFilter } = useCardsFilter()
 
     return (
         <aside className="border-r border-border bg-card overflow-y-auto p-4 space-y-6">
@@ -64,6 +64,25 @@ export function CardFilters() {
                             className="border"
                         >
                             {cat}
+                        </Toggle>
+                    ))}
+                </div>
+            </section>
+
+            <section className="space-y-2">
+                <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                    Attributes
+                </h3>
+                <div className="flex flex-wrap gap-1.5">
+                    {ATTRIBUTES.map((attr) => (
+                        <Toggle
+                            key={attr}
+                            size="sm"
+                            pressed={attribute === attr}
+                            onPressedChange={(pressed) => setAttributeFilter(pressed ? attr : undefined)}
+                            className="border"
+                        >
+                            {attr}
                         </Toggle>
                     ))}
                 </div>

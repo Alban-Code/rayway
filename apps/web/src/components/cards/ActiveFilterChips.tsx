@@ -13,7 +13,7 @@ const COLOR_VARS: Record<Color, string> = {
 }
 
 export function ActiveFilterChips() {
-    const { colors, category, handleColorClick, activeCount, setCategoryFilter, clearAll } = useCardsFilter()
+    const { colors, category, attribute, activeCount, handleColorClick, setCategoryFilter, setAttributeFilter, clearAll } = useCardsFilter()
 
     if (activeCount === 0) return null
 
@@ -44,6 +44,18 @@ export function ActiveFilterChips() {
                         className="ml-1 hover:text-destructive"
                     >
                         ×
+                    </button>
+                </Badge>
+            )}
+            {attribute && (
+                <Badge variant="secondary" className="pr-1">
+                    {attribute}
+                    <button
+                        type="button"
+                        onClick={() => setAttributeFilter(undefined)}
+                        className="ml-1 hover:text-destructive"
+                    >
+                        x
                     </button>
                 </Badge>
             )}

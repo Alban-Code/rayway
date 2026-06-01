@@ -1,7 +1,7 @@
 import { IsOptional, IsEnum, IsInt, Min, Max, IsArray, IsString, Length } from "class-validator";
 import { Transform, Type } from "class-transformer";
 import { ApiPropertyOptional } from "@nestjs/swagger";
-import { Category, Color } from "../../generated/prisma/enums.js";
+import { Attribute, Category, Color } from "../../generated/prisma/enums.js";
 import { DEFAULT_LANG } from "../../common/constants.js";
 
 export class CardQueryDto {
@@ -16,6 +16,11 @@ export class CardQueryDto {
     @IsEnum(Category)
     @ApiPropertyOptional({ enum: Category, example: "Leader" })
     category?: Category;
+
+    @IsOptional()
+    @IsEnum(Attribute)
+    @ApiPropertyOptional({ enum: Attribute, example: "Slash" })
+    attribute?: Attribute
 
     @IsOptional()
     @IsArray()

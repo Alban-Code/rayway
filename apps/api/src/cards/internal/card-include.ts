@@ -21,7 +21,7 @@ export const cardInclude = (lang: string) => ({
     variants: {
         include: {
             images: {
-                where: { languageCode: { in: [lang, DEFAULT_LANG] } }
+                where: { languageCode: lang }
             }
         },
         orderBy: [{ variantType: 'asc' }, { variantCode: 'asc' }]

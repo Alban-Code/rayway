@@ -70,6 +70,10 @@
     --danger: oklch(0.66 0.22 25);
     --info: oklch(0.72 0.15 230);
 
+    /* Effect keyword labels — printed-card "black pill" look */
+    --kw-bg: oklch(0.13 0.012 260);
+    --kw-fg: oklch(0.96 0.005 250);
+
     /* Type scale (display) */
     --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
     --font-body: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;

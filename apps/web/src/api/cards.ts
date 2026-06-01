@@ -27,15 +27,13 @@ export function isCategory(value: string): value is Category {
 export const RARITIES = ['C', 'UC', 'R', 'SR', 'SEC', 'L', 'P', 'TR', 'SP'] as const;
 export type Rarity = typeof RARITIES[number];
 
-export const Attribute = {
-    Slash: 'Slash',
-    Strike: 'Strike',
-    Ranged: 'Ranged',
-    Special: 'Special',
-    Wisdom: 'Wisdom'
-} as const;
+export const ATTRIBUTES = ['Slash', 'Strike', 'Ranged', 'Special', 'Wisdom'] as const;
 
-export type Attribute = (typeof Attribute)[keyof typeof Attribute];
+export type Attribute = typeof ATTRIBUTES[number];
+
+export function isAttribute(value: string): value is Attribute {
+    return (ATTRIBUTES as readonly string[]).includes(value)
+}
 
 export const VariantType = {
     Regular: 'Regular',
@@ -91,7 +89,9 @@ export type CardListParams = {
     lang?: string
     colors?: Color[]
     category?: Category,
-    q?: string
+    q?: string,
+    attribute?: Attribute,
+    type?: string[]
 }
 
 export async function fetchCards(params: CardListParams = {}): Promise<PaginatedCardsDto> {
@@ -105,6 +105,8 @@ export async function fetchCards(params: CardListParams = {}): Promise<Paginated
     }
 
     if (params.category !== undefined) queryString.set('category', params.category)
+
+    if (params.attribute !== undefined) queryString.set('attribute', params.attribute)
 
     if (params.q) queryString.set('q', params.q)
 

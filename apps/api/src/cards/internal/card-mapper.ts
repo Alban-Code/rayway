@@ -29,12 +29,12 @@ export function mapCard(card: CardWithRelations, lang: string): CardListItemDto 
         })),
         effect: translation?.effect ?? null,
         triggerEffect: translation?.triggerEffect ?? null,
-        variants: card.variants.map((v) => ({
+        variants: card.variants.filter(v => v.images.length > 0).map((v) => ({
             variantCode: v.variantCode,
             variantType: v.variantType,
             isPromo: v.isPromo,
             isStarter: v.isStarter,
-            imageUrl: buildImageUrl(pickByLang(v.images, lang)?.storageKey),
+            imageUrl: buildImageUrl(v.images[0]?.storageKey),
         })),
         setCode: card.set.code,
         language: resolvedLang,

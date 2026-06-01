@@ -33,7 +33,7 @@ function getPageRange(current: number, total: number): (number | 'ellipsis')[] {
 
 export function CardsPage() {
     const filters = useCardsFilter()
-    const { data, isPending, isError } = useCards({ limit: 30, colors: filters.colors, category: filters.category, page: filters.page, q: filters.q, lang: filters.lang })
+    const { data, isPending, isError } = useCards({ limit: 30, colors: filters.colors, category: filters.category, page: filters.page, q: filters.q, lang: filters.lang, attribute: filters.attribute })
     const totalPages = data ? Math.ceil(data.total / data.limit) : 0
     const isFirstPage = filters.page === 1
     const isLastPage = filters.page === totalPages
