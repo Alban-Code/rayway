@@ -2,6 +2,8 @@ import { Badge } from "@/components/ui/badge"
 import { useCardsFilter } from "@/lib/hooks/useCardsFilter"
 import type { Color } from "@/api/cards"
 import type { CSSProperties } from "react"
+import { useTypes } from "@/lib/hooks/useTypes"
+import { Skeleton } from "@/components/ui/skeleton"
 
 const COLOR_VARS: Record<Color, string> = {
     Red: 'var(--id-red)',
@@ -13,9 +15,12 @@ const COLOR_VARS: Record<Color, string> = {
 }
 
 export function ActiveFilterChips() {
-    const { colors, category, attribute, activeCount, handleColorClick, setCategoryFilter, setAttributeFilter, clearAll } = useCardsFilter()
+    const { colors, category, attribute, types, lang, activeCount, handleColorClick, setCategoryFilter, setAttributeFilter, clearAll, setTypes } = useCardsFilter()
+    const { data: typeOptions } = useTypes({ lang })
 
     if (activeCount === 0) return null
+
+    const labelByCode = new Map(typeOptions?.map((t) => [t.code, t.label]))
 
     return (
         <div className="flex flex-wrap items-center gap-1.5 px-7 py-3 border-b border-border bg-muted/40">
@@ -59,6 +64,16 @@ export function ActiveFilterChips() {
                     </button>
                 </Badge>
             )}
+
+            {!typeOptions
+                ? types.map((type) => <Skeleton key={type} className="h-5 w-20 rounded-full" />)
+                : types.map((type) => (
+                    <Badge key={type} variant="secondary" className="gap-1.5 pr-1">
+                        {labelByCode.get(type) ?? type}
+                        <button type="button" onClick={() => setTypes(types.filter((t) => t !== type))} className="ml-1 hover:text-destructive">×</button>
+                    </Badge>
+                ))
+            }
 
             <div className="flex-1" />
             <button type="button" onClick={clearAll} className="text-xs text-primary font-semibold hover:underline">Clear all</button>

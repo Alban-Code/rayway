@@ -3,6 +3,7 @@ import { COLORS, CATEGORIES, ATTRIBUTES, type Color } from "@/api/cards"
 import { useCardsFilter } from "@/lib/hooks/useCardsFilter"
 import type { CSSProperties } from "react"
 import { CardSearch } from "@/components/cards/CardSearch"
+import { TypeFilter } from "./TypeFilter"
 
 const COLOR_VARS: Record<Color, string> = {
     Red: 'var(--id-red)',
@@ -87,5 +88,14 @@ export function CardFilters() {
                     ))}
                 </div>
             </section>
-        </aside>)
+
+            <section className="space-y-2">
+                <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                    Types
+                </h3>
+                <div className="flex flex-wrap gap-1.5">
+                    <TypeFilter />
+                </div>
+            </section>
+        </aside >)
 }

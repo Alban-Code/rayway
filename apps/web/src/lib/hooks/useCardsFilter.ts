@@ -13,8 +13,9 @@ export function useCardsFilter() {
     const q = searchParams.get('q') ?? ''
     const langRaw = searchParams.get('lang')
     const lang = langRaw && isLang(langRaw) ? langRaw : "en"
+    const types = searchParams.getAll('types')
 
-    const activeCount = colors.length + (category ? 1 : 0) + (q.length > 0 ? 1 : 0) + (attribute ? 1 : 0)
+    const activeCount = colors.length + (category ? 1 : 0) + (q.length > 0 ? 1 : 0) + (attribute ? 1 : 0) + types.length
 
     function setCategoryFilter(value: Category | undefined) {
         setSearchParams((prev) => {
@@ -60,6 +61,7 @@ export function useCardsFilter() {
             prev.delete('page')
             prev.delete('q')
             prev.delete('attribute')
+            prev.delete('types')
             return prev
         })
     }
@@ -82,5 +84,15 @@ export function useCardsFilter() {
         })
     }
 
-    return { colors, category, attribute, activeCount, page, q, lang, handleColorClick, setCategoryFilter, setAttributeFilter, clearAll, setPage, setSearch, setLang }
+    function setTypes(types: string[]) {
+        setSearchParams((prev) => {
+            prev.delete('page')
+            prev.delete('types')
+            types.forEach((type: any) => prev.append('types', type))
+            return prev
+        })
+
+    }
+
+    return { colors, category, attribute, activeCount, page, q, lang, types, handleColorClick, setCategoryFilter, setAttributeFilter, clearAll, setPage, setSearch, setLang, setTypes }
 }

@@ -91,7 +91,7 @@ export type CardListParams = {
     category?: Category,
     q?: string,
     attribute?: Attribute,
-    type?: string[]
+    types?: string[]
 }
 
 export async function fetchCards(params: CardListParams = {}): Promise<PaginatedCardsDto> {
@@ -109,6 +109,10 @@ export async function fetchCards(params: CardListParams = {}): Promise<Paginated
     if (params.attribute !== undefined) queryString.set('attribute', params.attribute)
 
     if (params.q) queryString.set('q', params.q)
+
+    if (params.types !== undefined && params.types.length > 0) {
+        params.types.forEach((type) => queryString.append('types', type))
+    }
 
     const path = `/cards${queryString.toString() ? `?${queryString}` : ''}`
 

@@ -5,11 +5,12 @@ import { AppService } from './app.service.js';
 import { PrismaModule } from '../prisma/prisma.module.js';
 import { CardsModule } from './cards/cards.module.js';
 import { UsersModule } from './users/users.module.js';
+import { TypesModule } from "./types/types.module.js";
 import { ServeStaticModule } from "@nestjs/serve-static"
 import { resolve } from 'node:path';
 
 @Module({
-  imports: [AuthModule, PrismaModule, CardsModule, UsersModule, ServeStaticModule.forRoot({
+  imports: [AuthModule, PrismaModule, CardsModule, UsersModule, TypesModule, ServeStaticModule.forRoot({
     rootPath: resolve(process.env.IMAGE_STORAGE_PATH!),
     serveRoot: '/images',
   }),],

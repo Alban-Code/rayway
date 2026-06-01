@@ -30,6 +30,13 @@ export class CardQueryDto {
     tags?: string[];
 
     @IsOptional()
+    @IsArray()
+    @IsString({ each: true })
+    @Transform(({ value }) => (Array.isArray(value) ? value : [value]))
+    @ApiPropertyOptional({ type: String, isArray: true, example: ["straw-hat-crew", "animal"] })
+    types?: string[]
+
+    @IsOptional()
     @IsString()
     @ApiPropertyOptional({ description: "Recherche full-text sur le nom et l'effet" })
     q?: string;
