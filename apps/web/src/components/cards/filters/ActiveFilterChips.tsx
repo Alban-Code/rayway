@@ -1,21 +1,12 @@
 import { Badge } from "@/components/ui/badge"
 import { useCardsFilter } from "@/lib/hooks/useCardsFilter"
-import type { Color } from "@/api/cards"
 import type { CSSProperties } from "react"
 import { useTypes } from "@/lib/hooks/useTypes"
 import { Skeleton } from "@/components/ui/skeleton"
-
-const COLOR_VARS: Record<Color, string> = {
-    Red: 'var(--id-red)',
-    Green: 'var(--id-green)',
-    Blue: 'var(--id-blue)',
-    Purple: 'var(--id-purple)',
-    Black: 'var(--id-black)',
-    Yellow: 'var(--id-yellow)',
-}
+import { COLOR_VARS } from "@/lib/cardColors"
 
 export function ActiveFilterChips() {
-    const { colors, category, attribute, types, lang, activeCount, handleColorClick, setCategoryFilter, setAttributeFilter, clearAll, setTypes } = useCardsFilter()
+    const { colors, category, attribute, types, lang, activeCount, costs, counters, handleColorClick, setCategoryFilter, setAttributeFilter, clearAll, setTypes, setCost, setCounter } = useCardsFilter()
     const { data: typeOptions } = useTypes({ lang })
 
     if (activeCount === 0) return null
@@ -73,6 +64,34 @@ export function ActiveFilterChips() {
                         <button type="button" onClick={() => setTypes(types.filter((t) => t !== type))} className="ml-1 hover:text-destructive">×</button>
                     </Badge>
                 ))
+            }
+
+            {costs.map((c) => (
+                <Badge key={c} variant="secondary" className="gap-1.5 pr-1">
+                    Cost {c}
+                    <button
+                        type="button"
+                        onClick={() => setCost(c)}
+                        className="ml-1 hover:text-destructive"
+                    >
+                        ×
+                    </button>
+                </Badge>
+            ))
+            }
+
+            {counters.map((c) => (
+                <Badge key={c} variant="secondary" className="gap-1.5 pr-1">
+                    Counter {c}
+                    <button
+                        type="button"
+                        onClick={() => setCounter(c)}
+                        className="ml-1 hover:text-destructive"
+                    >
+                        ×
+                    </button>
+                </Badge>
+            ))
             }
 
             <div className="flex-1" />

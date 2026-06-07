@@ -4,7 +4,7 @@ import { AccountPage } from '@/pages/AccountPage';
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { RedirectIfAuth } from "@/components/auth/RedirectIfAuth";
 import { CardsPage } from "@/pages/CardsPage";
-import { CardDetailSheet } from "./components/cards/CardDetailSheet";
+import { CardDetailSheet } from "./components/cards/detail/CardDetailSheet";
 
 const router = createBrowserRouter([
   { path: '/', element: <div>Home</div> },

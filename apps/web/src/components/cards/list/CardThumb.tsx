@@ -2,10 +2,10 @@ import type { CardListItemDto } from "@/api/cards"
 import { idColorStyle } from "@/lib/idStyle"
 import { Link, useLocation } from "react-router"
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
-import { CardDetailHeader } from "@/components/cards/CardDetailHeader"
-import { CardDetailStats } from "@/components/cards/CardDetailStats"
-import { CardDetailChips } from "@/components/cards/CardDetailChips"
-import { CardDetailEffects } from "@/components/cards/CardDetailEffects"
+import { CardDetailHeader } from "@/components/cards/detail/CardDetailHeader"
+import { CardDetailStats } from "@/components/cards/detail/CardDetailStats"
+import { CardDetailChips } from "@/components/cards/detail/CardDetailChips"
+import { CardDetailEffects } from "@/components/cards/detail/CardDetailEffects"
 
 type CardThumbProps = {
     card: CardListItemDto

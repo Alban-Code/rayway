@@ -1,8 +1,8 @@
-import { CardDetailView } from "@/components/cards/CardDetailView"
+import { CardDetailView } from "@/components/cards/detail/CardDetailView"
 import { useCardDetail } from "@/lib/hooks/useCardDetail"
 import { useLocation, useNavigate, useParams } from "react-router"
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { CardDetailSkeleton } from "@/components/cards/CardDetailSkeleton";
+import { CardDetailSkeleton } from "@/components/cards/detail/CardDetailSkeleton";
 import { useCardsFilter } from "@/lib/hooks/useCardsFilter";
 
 export function CardDetailSheet() {

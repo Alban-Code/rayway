@@ -1,4 +1,4 @@
-import { isAttribute, isCategory, isColor, isLang, type Attribute, type Category, type Color, type LangCode } from "@/api/cards";
+import { isAttribute, isCategory, isColor, isCost, isCounter, isLang, type Attribute, type Category, type Color, type Cost, type Counter, type LangCode } from "@/api/cards";
 import { useSearchParams } from "react-router";
 
 export function useCardsFilter() {
@@ -14,8 +14,10 @@ export function useCardsFilter() {
     const langRaw = searchParams.get('lang')
     const lang = langRaw && isLang(langRaw) ? langRaw : "en"
     const types = searchParams.getAll('types')
+    const costs = searchParams.getAll('costs').map(Number).filter(isCost)
+    const counters = searchParams.getAll('counters').map(Number).filter(isCounter)
 
-    const activeCount = colors.length + (category ? 1 : 0) + (q.length > 0 ? 1 : 0) + (attribute ? 1 : 0) + types.length
+    const activeCount = colors.length + (category ? 1 : 0) + (q.length > 0 ? 1 : 0) + (attribute ? 1 : 0) + types.length + costs.length + counters.length
 
     function setCategoryFilter(value: Category | undefined) {
         setSearchParams((prev) => {
@@ -62,6 +64,8 @@ export function useCardsFilter() {
             prev.delete('q')
             prev.delete('attribute')
             prev.delete('types')
+            prev.delete('costs')
+            prev.delete('counters')
             return prev
         })
     }
@@ -94,5 +98,27 @@ export function useCardsFilter() {
 
     }
 
-    return { colors, category, attribute, activeCount, page, q, lang, types, handleColorClick, setCategoryFilter, setAttributeFilter, clearAll, setPage, setSearch, setLang, setTypes }
+    function setCounter(c: Counter) {
+        const active = counters.includes(c)
+        setSearchParams((prev) => {
+            prev.delete('page')
+            prev.delete('counters')
+            const next = active ? counters.filter(x => x !== c) : [...counters, c]
+            next.forEach(x => prev.append('counters', String(x)))
+            return prev
+        })
+    }
+
+    function setCost(c: Cost) {
+        const active = costs.includes(c)
+        setSearchParams((prev) => {
+            prev.delete('page')
+            prev.delete('costs')
+            const next = active ? costs.filter(x => x !== c) : [...costs, c]
+            next.forEach(x => prev.append('costs', String(x)))
+            return prev
+        })
+    }
+
+    return { colors, category, attribute, activeCount, page, q, lang, types, counters, costs, handleColorClick, setCategoryFilter, setAttributeFilter, clearAll, setPage, setSearch, setLang, setTypes, setCost, setCounter }
 }

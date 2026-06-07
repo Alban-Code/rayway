@@ -43,6 +43,20 @@ export const VariantType = {
 
 export type VariantType = (typeof VariantType)[keyof typeof VariantType]
 
+export const COSTS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const
+export type Cost = typeof COSTS[number]
+
+export function isCost(value: number): value is Cost {
+    return (COSTS as readonly number[]).includes(value)
+}
+
+export const COUNTERS = [0, 1000, 2000] as const
+export type Counter = typeof COUNTERS[number]
+
+export function isCounter(value: number): value is Counter {
+    return (COUNTERS as readonly number[]).includes(value)
+}
+
 export type CardTypeDto = {
     code: string;
     label: string;
@@ -91,7 +105,9 @@ export type CardListParams = {
     category?: Category,
     q?: string,
     attribute?: Attribute,
-    types?: string[]
+    types?: string[],
+    costs?: number[],
+    counters?: number[]
 }
 
 export async function fetchCards(params: CardListParams = {}): Promise<PaginatedCardsDto> {
@@ -112,6 +128,14 @@ export async function fetchCards(params: CardListParams = {}): Promise<Paginated
 
     if (params.types !== undefined && params.types.length > 0) {
         params.types.forEach((type) => queryString.append('types', type))
+    }
+
+    if (params.costs !== undefined && params.costs.length > 0) {
+        params.costs.forEach(c => queryString.append('costs', String(c)))
+    }
+
+    if (params.counters !== undefined && params.counters.length > 0) {
+        params.counters.forEach(c => queryString.append('counters', String(c)))
     }
 
     const path = `/cards${queryString.toString() ? `?${queryString}` : ''}`

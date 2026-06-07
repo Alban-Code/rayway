@@ -1,7 +1,7 @@
-import { ActiveFilterChips } from "@/components/cards/ActiveFilterChips";
-import { CardFilters } from "@/components/cards/CardFilters";
-import { CardGrid } from "@/components/cards/CardGrid";
-import { CardsSkeleton } from "@/components/cards/CardsSkeleton";
+import { ActiveFilterChips } from "@/components/cards/filters/ActiveFilterChips";
+import { CardFilters } from "@/components/cards/filters/CardFilters";
+import { CardGrid } from "@/components/cards/list/CardGrid";
+import { CardsSkeleton } from "@/components/cards/list/CardsSkeleton";
 import { useCards } from "@/lib/hooks/useCards";
 import { useCardsFilter } from "@/lib/hooks/useCardsFilter";
 import { cn } from "@/lib/utils";
@@ -33,7 +33,7 @@ function getPageRange(current: number, total: number): (number | 'ellipsis')[] {
 
 export function CardsPage() {
     const filters = useCardsFilter()
-    const { data, isPending, isError } = useCards({ limit: 30, colors: filters.colors, category: filters.category, page: filters.page, q: filters.q, lang: filters.lang, attribute: filters.attribute, types: filters.types })
+    const { data, isPending, isError } = useCards({ limit: 30, colors: filters.colors, category: filters.category, page: filters.page, q: filters.q, lang: filters.lang, attribute: filters.attribute, types: filters.types, costs: filters.costs, counters: filters.counters })
     const totalPages = data ? Math.ceil(data.total / data.limit) : 0
     const isFirstPage = filters.page === 1
     const isLastPage = filters.page === totalPages

@@ -42,6 +42,26 @@ export class CardQueryDto {
     q?: string;
 
     @IsOptional()
+    @IsArray()
+    @IsInt({ each: true })
+    @Transform(({ value }) => {
+        const arr = Array.isArray(value) ? value : [value]
+        return arr.map(Number)
+    })
+    @ApiPropertyOptional({ type: Number, isArray: true, example: [2, 4] })
+    costs?: number[]
+
+    @IsOptional()
+    @IsArray()
+    @IsInt({ each: true })
+    @Transform(({ value }) => {
+        const arr = Array.isArray(value) ? value : [value]
+        return arr.map(Number)
+    })
+    @ApiPropertyOptional({ type: Number, isArray: true, example: [1000, 2000] })
+    counters?: number[]
+
+    @IsOptional()
     @IsString()
     @Length(2, 5)
     @ApiPropertyOptional({ default: "en", example: "fr" })

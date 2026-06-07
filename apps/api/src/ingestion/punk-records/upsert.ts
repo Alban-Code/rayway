@@ -123,7 +123,8 @@ export async function upsertCard(
       colors: card.colors,
       power: card.power,
       life: card.life,
-      counterAmount: card.counterAmount
+      counterAmount: card.counterAmount,
+      cost: card.cost
     };
 
     let cardId: string;

@@ -2,7 +2,7 @@ import { Prisma } from "../../generated/prisma/client.js";
 import { CardQueryDto } from "../dto/card-query.dto.js";
 
 export function buildCardWhere(query: CardQueryDto): Prisma.CardWhereInput {
-    const { category, attribute, colors, q, tags, types, lang } = query;
+    const { category, attribute, colors, q, tags, types, lang, costs, counters } = query;
     return {
         ...(category && { category }),
         ...(attribute && { attributes: { has: attribute } }),
@@ -20,6 +20,14 @@ export function buildCardWhere(query: CardQueryDto): Prisma.CardWhereInput {
                 }
             }
         }),
-        ...(lang && { variants: { some: { images: { some: { languageCode: lang } } } } })
+        ...(lang && { variants: { some: { images: { some: { languageCode: lang } } } } }),
+        ...(costs?.length && { cost: { in: costs } }),
+        ...(counters?.length && {
+            OR: [
+                { counterAmount: { in: counters } },
+                ...(counters.includes(0) ? [{ counterAmount: null }] : [])
+
+            ]
+        })
     }
 }
