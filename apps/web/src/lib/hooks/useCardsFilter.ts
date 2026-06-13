@@ -1,4 +1,4 @@
-import { isAttribute, isCategory, isColor, isCost, isCounter, isLang, type Attribute, type Category, type Color, type Cost, type Counter, type LangCode } from "@/api/cards";
+import { DEFAULT_PAGE_SIZE, isAttribute, isCategory, isColor, isCost, isCounter, isLang, isPageSize, type Attribute, type Category, type Color, type Cost, type Counter, type LangCode, type PageSize } from "@/api/cards";
 import { useSearchParams } from "react-router";
 
 export function useCardsFilter() {
@@ -16,6 +16,8 @@ export function useCardsFilter() {
     const types = searchParams.getAll('types')
     const costs = searchParams.getAll('costs').map(Number).filter(isCost)
     const counters = searchParams.getAll('counters').map(Number).filter(isCounter)
+    const sizeRaw = Number(searchParams.get('size'))
+    const size = isPageSize(sizeRaw) ? sizeRaw : DEFAULT_PAGE_SIZE
 
     const activeCount = colors.length + (category ? 1 : 0) + (q.length > 0 ? 1 : 0) + (attribute ? 1 : 0) + types.length + costs.length + counters.length
 
@@ -120,5 +122,14 @@ export function useCardsFilter() {
         })
     }
 
-    return { colors, category, attribute, activeCount, page, q, lang, types, counters, costs, handleColorClick, setCategoryFilter, setAttributeFilter, clearAll, setPage, setSearch, setLang, setTypes, setCost, setCounter }
+    function setPageSize(value: PageSize) {
+        setSearchParams((prev) => {
+            prev.delete('page')
+            if (value === DEFAULT_PAGE_SIZE) prev.delete('size')
+            else (prev.set('size', String(value)))
+            return prev
+        })
+    }
+
+    return { colors, category, attribute, activeCount, page, q, lang, types, counters, costs, size, handleColorClick, setCategoryFilter, setAttributeFilter, clearAll, setPage, setSearch, setLang, setTypes, setCost, setCounter, setPageSize }
 }

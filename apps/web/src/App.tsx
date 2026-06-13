@@ -4,10 +4,11 @@ import { AccountPage } from '@/pages/AccountPage';
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { RedirectIfAuth } from "@/components/auth/RedirectIfAuth";
 import { CardsPage } from "@/pages/CardsPage";
-import { CardDetailSheet } from "./components/cards/detail/CardDetailSheet";
+import { CardDetailSheet } from "@/components/cards/detail/CardDetailSheet";
+import { AppLayout } from "@/components/layouts/AppLayout";
+import { Home } from "@/pages/Home";
 
 const router = createBrowserRouter([
-  { path: '/', element: <div>Home</div> },
   {
     element: <RedirectIfAuth />,
     children: [
@@ -16,17 +17,22 @@ const router = createBrowserRouter([
     ]
   },
   {
-    element: <RequireAuth />,
+    element: <AppLayout />,
     children: [
-      { path: '/account', element: <AccountPage /> },
+      { path: "/", element: <Home /> },
+      {
+        path: '/cards', element: <CardsPage />, children: [
+          { path: '/cards/:code', element: <CardDetailSheet /> }
+        ]
+      },
+      {
+        element: <RequireAuth />,
+        children: [
+          { path: '/account', element: <AccountPage /> },
+        ]
+      },
     ]
-  },
-  {
-    path: '/cards', element: <CardsPage />, children: [
-      { path: '/cards/:code', element: <CardDetailSheet /> }
-    ]
-  },
-
+  }
 ])
 
 function App() {

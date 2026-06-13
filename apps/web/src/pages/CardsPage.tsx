@@ -9,7 +9,7 @@ import { Outlet, useMatch } from "react-router";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationEllipsis, PaginationPrevious } from "@/components/ui/pagination";
 import { useEffect, useRef } from "react";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { isLang, LANGUAGES } from "@/api/cards";
+import { isLang, LANGUAGES, PAGE_SIZES, type PageSize } from "@/api/cards";
 
 function getPageRange(current: number, total: number): (number | 'ellipsis')[] {
     // Cas A : peu de pages, on affiche tout
@@ -33,7 +33,7 @@ function getPageRange(current: number, total: number): (number | 'ellipsis')[] {
 
 export function CardsPage() {
     const filters = useCardsFilter()
-    const { data, isPending, isError } = useCards({ limit: 30, colors: filters.colors, category: filters.category, page: filters.page, q: filters.q, lang: filters.lang, attribute: filters.attribute, types: filters.types, costs: filters.costs, counters: filters.counters })
+    const { data, isPending, isError } = useCards({ limit: filters.size, colors: filters.colors, category: filters.category, page: filters.page, q: filters.q, lang: filters.lang, attribute: filters.attribute, types: filters.types, costs: filters.costs, counters: filters.counters })
     const totalPages = data ? Math.ceil(data.total / data.limit) : 0
     const isFirstPage = filters.page === 1
     const isLastPage = filters.page === totalPages
@@ -46,7 +46,7 @@ export function CardsPage() {
     }, [filters.page])
 
     return (
-        <div className="grid grid-cols-[260px_1fr] h-dvh overflow-hidden">
+        <div className="grid grid-cols-[260px_1fr] h-full overflow-hidden">
             <CardFilters />
             <main
                 className={cn(
@@ -67,6 +67,15 @@ export function CardsPage() {
                             <SelectGroup>
                                 <SelectLabel>Languages</SelectLabel>
                                 {LANGUAGES.map(({ code, label }) => (<SelectItem key={code} value={code}>{label}</SelectItem>))}
+                            </SelectGroup>
+                        </SelectContent>
+                    </Select>
+                    <Select value={String(filters.size)} onValueChange={(v) => filters.setPageSize(Number(v) as PageSize)}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                            <SelectGroup>
+                                <SelectLabel>Per page</SelectLabel>
+                                {PAGE_SIZES.map((n) => (<SelectItem key={n} value={String(n)}>{n}</SelectItem>))}
                             </SelectGroup>
                         </SelectContent>
                     </Select>

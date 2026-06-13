@@ -12,7 +12,7 @@ export class CardsService {
     constructor(private readonly prisma: PrismaService) { }
 
     async findAll(query: CardQueryDto): Promise<PaginatedCardsDto> {
-        const { limit = 20, page = 1 } = query;
+        const { limit = 30, page = 1 } = query;
         const lang = query.lang ?? DEFAULT_LANG;
 
         const where = buildCardWhere(query);

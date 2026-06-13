@@ -57,6 +57,14 @@ export function isCounter(value: number): value is Counter {
     return (COUNTERS as readonly number[]).includes(value)
 }
 
+export const PAGE_SIZES = [24, 30, 36, 48]
+export type PageSize = (typeof PAGE_SIZES)[number]
+export const DEFAULT_PAGE_SIZE = 30 satisfies PageSize
+
+export function isPageSize(n: number): n is PageSize {
+    return (PAGE_SIZES as readonly number[]).includes(n)
+}
+
 export type CardTypeDto = {
     code: string;
     label: string;

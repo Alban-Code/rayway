@@ -1,0 +1,24 @@
+/* =============================================================
+   App chrome — frosted-glass navbar (signature visual, principe 4)
+   Consomme les tokens bruts (bg-glass / accent-glow / border) :
+   suit donc automatiquement le swap de palette.
+   ============================================================= */
+
+.app-chrome {
+    /* verre sombre : on part du canvas (sombre) et on laisse passer ~22 %
+       de translucidité pour le flou — plus de gris du token bg-glass neutre */
+    background: color-mix(in oklch, var(--bg-canvas) 78%, transparent);
+    -webkit-backdrop-filter: blur(14px) saturate(160%);
+    backdrop-filter: blur(14px) saturate(160%);
+    border-bottom: 1px solid var(--border);
+
+    /* hairline glow sous la barre + halo doux qui descend */
+    box-shadow:
+        0 1px 0 color-mix(in oklch, var(--accent-glow) 22%, transparent),
+        0 10px 30px -16px color-mix(in oklch, var(--accent-glow) 30%, transparent);
+}
+
+.app-chrome__brand {
+    color: var(--fg-1);
+    text-shadow: 0 0 20px color-mix(in oklch, var(--accent-glow) 40%, transparent);
+}

@@ -1,5 +1,6 @@
 @import "./styles/tokens.css";
 @import "./styles/primitives.css";
+@import "./styles/chrome.css";
 @import "./styles/pages/auth.css";
 @import "./styles/pages/account.css";
 @import "./styles/pages/cards.css";
