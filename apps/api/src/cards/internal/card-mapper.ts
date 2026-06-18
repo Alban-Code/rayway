@@ -1,12 +1,8 @@
 import { DEFAULT_LANG } from "../../common/constants.js";
+import { buildImageUrl } from "../../common/image-url.js";
 import { pickByLang } from "../../common/lang/pick-by-lang.js";
 import { CardListItemDto } from "../dto/card-response.dto.js";
 import { CardWithRelations } from "./card-include.js";
-
-function buildImageUrl(key: string | null | undefined): string | null {
-    if (!key) return null;
-    return `${process.env.IMAGE_BASE_URL}/${key}`
-}
 
 export function mapCard(card: CardWithRelations, lang: string): CardListItemDto {
     const translation = pickByLang(card.translations, lang);

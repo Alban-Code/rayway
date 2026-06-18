@@ -8,9 +8,10 @@ import { UsersModule } from './users/users.module.js';
 import { TypesModule } from "./types/types.module.js";
 import { ServeStaticModule } from "@nestjs/serve-static"
 import { resolve } from 'node:path';
+import { DecksModule } from './decks/decks.module.js';
 
 @Module({
-  imports: [AuthModule, PrismaModule, CardsModule, UsersModule, TypesModule, ServeStaticModule.forRoot({
+  imports: [AuthModule, PrismaModule, CardsModule, UsersModule, DecksModule, TypesModule, ServeStaticModule.forRoot({
     rootPath: resolve(process.env.IMAGE_STORAGE_PATH!),
     serveRoot: '/images',
   }),],

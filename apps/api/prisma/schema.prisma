@@ -96,6 +96,8 @@ model Language {
   formatTranslations FormatTranslation[]
   variantImages      CardVariantImage[]
   collectionItems    CollectionItem[]
+  deckCards          DeckCard[]
+  decks              Deck[]
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -392,35 +394,39 @@ model FormatLegality {
 // ─────────────────────────────────────────────────────────────────────────────
 
 model Deck {
-  id              String   @id @default(cuid())
-  userId          String
-  formatId        String?
-  leaderVariantId String
-  name            String
-  description     String?
-  isPublic        Boolean  @default(false)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id                 String   @id @default(cuid())
+  userId             String
+  formatId           String?
+  leaderVariantId    String
+  leaderLanguageCode String
+  name               String
+  description        String?
+  isPublic           Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
-  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  format        Format?     @relation(fields: [formatId], references: [id])
-  leaderVariant CardVariant @relation("DeckLeader", fields: [leaderVariantId], references: [id])
-  cards         DeckCard[]
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  format         Format?     @relation(fields: [formatId], references: [id])
+  leaderVariant  CardVariant @relation("DeckLeader", fields: [leaderVariantId], references: [id])
+  leaderLanguage Language    @relation(fields: [leaderLanguageCode], references: [code])
+  cards          DeckCard[]
 
   @@index([userId])
   @@index([formatId])
 }
 
 model DeckCard {
-  id        String @id @default(cuid())
-  deckId    String
-  variantId String
-  quantity  Int    @default(1)
+  id           String @id @default(cuid())
+  deckId       String
+  variantId    String
+  languageCode String
+  quantity     Int    @default(1)
 
-  deck    Deck        @relation(fields: [deckId], references: [id], onDelete: Cascade)
-  variant CardVariant @relation(fields: [variantId], references: [id])
+  deck     Deck        @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  variant  CardVariant @relation(fields: [variantId], references: [id])
+  language Language    @relation(fields: [languageCode], references: [code])
 
-  @@unique([deckId, variantId])
+  @@unique([deckId, variantId, languageCode])
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
