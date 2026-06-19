@@ -1,6 +1,6 @@
 import { Controller, Get, Param, Query } from "@nestjs/common";
 import { DecksService } from "./decks.service.js";
-import { ApiOkResponse, ApiOperation, ApiTags, ApiUnauthorizedResponse } from "@nestjs/swagger";
+import { ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiTags, ApiUnauthorizedResponse } from "@nestjs/swagger";
 import { DeckQueryDto } from "./dto/deck-query.dto.js";
 import { Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { auth } from "../auth/auth.js";
@@ -21,8 +21,9 @@ export class DecksController {
 
     @Get(':id')
     @ApiOperation({ summary: "Details of a specific deck" })
-    @ApiOkResponse({})
+    @ApiOkResponse({ type: DeckDetailDto })
     @ApiUnauthorizedResponse()
+    @ApiNotFoundResponse()
     findbyId(@Param('id') id: string, @Session() session: UserSession<typeof auth>): Promise<DeckDetailDto> {
         return this.decksService.findById(session.user.id, id)
     }

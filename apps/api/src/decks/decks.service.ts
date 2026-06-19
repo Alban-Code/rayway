@@ -3,7 +3,7 @@ import { PrismaService } from "../../prisma/prisma.service.js";
 import { DeckQueryDto } from "./dto/deck-query.dto.js";
 import { DeckDetailDto, PaginatedDecksDto } from "./dto/deck-response.dto.js";
 import { deckDetailInclude, deckInclude } from "./internal/deck-include.js";
-import { mapDeck } from "./internal/deck-mapper.js";
+import { mapDeck, mapDeckDetail } from "./internal/deck-mapper.js";
 import { buildDeckWhere } from "./internal/deck-where.js";
 
 @Injectable()

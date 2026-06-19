@@ -20,6 +20,9 @@ export class DeckLeaderDto {
 }
 
 export class DeckCardDto {
+    @ApiProperty({ type: String, example: "Nami" })
+    name!: string;
+
     @ApiProperty({ type: String, description: "Language this occurrence was added in", example: "en" })
     languageCode!: string;
 
@@ -70,31 +73,7 @@ export class PaginatedDecksDto {
     limit!: number;
 }
 
-export class DeckDetailDto {
-    @ApiProperty({ type: String })
-    id!: string;
-
-    @ApiProperty({ type: String })
-    name!: string;
-
-    @ApiProperty({ type: String, nullable: true })
-    description!: string | null;
-
-    @ApiProperty({ type: DeckLeaderDto })
-    leader!: DeckLeaderDto;
-
-    @ApiProperty({ type: [CardVariantDto] })
-    cards!: CardVariantDto[]
-
-    @ApiProperty({ type: Boolean })
-    isPublic!: boolean;
-
-    @ApiProperty({ type: Number, description: "Sum of card quantities (leader excluded)" })
-    cardCount!: number;
-
-    @ApiProperty({ type: String, format: "date-time" })
-    createdAt!: Date;
-
-    @ApiProperty({ type: String, format: "date-time" })
-    updatedAt!: Date;
+export class DeckDetailDto extends DeckListItemDto {
+    @ApiProperty({ type: [DeckCardDto] })
+    cards!: DeckCardDto[];
 }
