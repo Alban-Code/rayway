@@ -1,0 +1,8 @@
+{
+  "name": "Variant inconnu",
+  "description": "ZZ99-999 n'existe pas -> rejete par le check 'missing' avant meme les regles.",
+  "leader": { "variantCode": "EB02-010_p2", "languageCode": "en" },
+  "cards": [
+    { "variantCode": "ZZ99-999", "languageCode": "en", "quantity": 4 }
+  ]
+}

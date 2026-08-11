@@ -1,0 +1,8 @@
+{
+  "name": "Langue inconnue (FK P2003)",
+  "description": "languageCode 'zz' inexistant -> passe toutes les regles metier puis echoue en base (P2003).",
+  "leader": { "variantCode": "EB02-010_p2", "languageCode": "en" },
+  "cards": [
+    { "variantCode": "EB01-013", "languageCode": "zz", "quantity": 4 }
+  ]
+}

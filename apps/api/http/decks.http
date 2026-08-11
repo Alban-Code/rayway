@@ -1,0 +1,135 @@
+### Rayway — tests manuels POST /api/decks
+### Extension recommandee : "REST Client" (VS Code) ou HTTP client JetBrains.
+### Sinon : copie/colle chaque body dans Postman (les bodies sont aussi dans ./decks/*.json).
+### La session est un COOKIE : lance d'abord le sign-in, le client renvoie le cookie tout seul.
+
+@baseUrl = http://localhost:3000/api
+@email = tester@rayway.dev
+@password = password1234
+
+### 0a. (une seule fois) creer le compte de test
+POST {{baseUrl}}/auth/sign-up/email
+Content-Type: application/json
+
+{ "email": "{{email}}", "password": "{{password}}", "name": "Tester" }
+
+### 0b. se connecter (pose le cookie de session)
+POST {{baseUrl}}/auth/sign-in/email
+Content-Type: application/json
+
+{ "email": "{{email}}", "password": "{{password}}" }
+
+### 1. VALIDE -> 201 Created (renvoie le DeckDetailDto)
+POST {{baseUrl}}/decks
+Content-Type: application/json
+
+{
+  "name": "Green/Purple Luffy — happy path",
+  "isPublic": false,
+  "leader": { "variantCode": "EB02-010_p2", "languageCode": "en" },
+  "cards": [
+    { "variantCode": "EB01-012_p3", "languageCode": "en", "quantity": 4 },
+    { "variantCode": "EB01-013", "languageCode": "en", "quantity": 4 },
+    { "variantCode": "EB01-014_p1", "languageCode": "en", "quantity": 4 },
+    { "variantCode": "EB01-015_p1", "languageCode": "en", "quantity": 4 },
+    { "variantCode": "EB01-016", "languageCode": "en", "quantity": 4 },
+    { "variantCode": "EB01-017", "languageCode": "en", "quantity": 4 },
+    { "variantCode": "EB01-018_p1", "languageCode": "en", "quantity": 4 }
+  ]
+}
+
+### 2. LEADER PAS UN LEADER -> 400 "Leader card must be a leader"
+POST {{baseUrl}}/decks
+Content-Type: application/json
+
+{
+  "name": "Leader invalide",
+  "leader": { "variantCode": "EB01-014_p1", "languageCode": "en" },
+  "cards": [ { "variantCode": "EB01-013", "languageCode": "en", "quantity": 4 } ]
+}
+
+### 3. HORS-COULEUR -> 400 (regle couleur)
+POST {{baseUrl}}/decks
+Content-Type: application/json
+
+{
+  "name": "Carte Red hors deck Green/Purple",
+  "leader": { "variantCode": "EB02-010_p2", "languageCode": "en" },
+  "cards": [
+    { "variantCode": "EB01-013", "languageCode": "en", "quantity": 4 },
+    { "variantCode": "EB01-003_p2", "languageCode": "en", "quantity": 1 }
+  ]
+}
+
+### 4. >4 D'UNE MEME CARTE (2 variantes, meme Card.code) -> 400 (regle <=4)
+POST {{baseUrl}}/decks
+Content-Type: application/json
+
+{
+  "name": ">4 exemplaires",
+  "leader": { "variantCode": "EB02-010_p2", "languageCode": "en" },
+  "cards": [
+    { "variantCode": "OP05-119", "languageCode": "en", "quantity": 4 },
+    { "variantCode": "OP05-119_p1", "languageCode": "en", "quantity": 1 }
+  ]
+}
+
+### 5. DECK > 50 -> 400 (regle taille)
+POST {{baseUrl}}/decks
+Content-Type: application/json
+
+{
+  "name": "Deck de 52 cartes",
+  "leader": { "variantCode": "EB02-010_p2", "languageCode": "en" },
+  "cards": [
+    { "variantCode": "EB01-012_p3", "languageCode": "en", "quantity": 4 },
+    { "variantCode": "EB01-013", "languageCode": "en", "quantity": 4 },
+    { "variantCode": "EB01-014_p1", "languageCode": "en", "quantity": 4 },
+    { "variantCode": "EB01-015_p1", "languageCode": "en", "quantity": 4 },
+    { "variantCode": "EB01-016", "languageCode": "en", "quantity": 4 },
+    { "variantCode": "EB01-017", "languageCode": "en", "quantity": 4 },
+    { "variantCode": "EB01-018_p1", "languageCode": "en", "quantity": 4 },
+    { "variantCode": "EB01-019", "languageCode": "en", "quantity": 4 },
+    { "variantCode": "EB01-020", "languageCode": "en", "quantity": 4 },
+    { "variantCode": "EB01-031", "languageCode": "en", "quantity": 4 },
+    { "variantCode": "EB01-032", "languageCode": "en", "quantity": 4 },
+    { "variantCode": "EB01-033", "languageCode": "en", "quantity": 4 },
+    { "variantCode": "EB01-034", "languageCode": "en", "quantity": 4 }
+  ]
+}
+
+### 6. LIGNE DUPLIQUEE -> 400 (check Set amont ; filet DB = P2002)
+POST {{baseUrl}}/decks
+Content-Type: application/json
+
+{
+  "name": "Ligne dupliquee",
+  "leader": { "variantCode": "EB02-010_p2", "languageCode": "en" },
+  "cards": [
+    { "variantCode": "EB01-013", "languageCode": "en", "quantity": 2 },
+    { "variantCode": "EB01-013", "languageCode": "en", "quantity": 2 }
+  ]
+}
+
+### 7. LANGUE INCONNUE -> 400 (P2003) [depend du try/catch]
+POST {{baseUrl}}/decks
+Content-Type: application/json
+
+{
+  "name": "Langue zz",
+  "leader": { "variantCode": "EB02-010_p2", "languageCode": "en" },
+  "cards": [ { "variantCode": "EB01-013", "languageCode": "zz", "quantity": 4 } ]
+}
+
+### 8. VARIANT INCONNU -> 400 "Unknown variant(s): ZZ99-999"
+POST {{baseUrl}}/decks
+Content-Type: application/json
+
+{
+  "name": "Variant inconnu",
+  "leader": { "variantCode": "EB02-010_p2", "languageCode": "en" },
+  "cards": [ { "variantCode": "ZZ99-999", "languageCode": "en", "quantity": 4 } ]
+}
+
+### (bonus) relister mes decks pour verifier la creation
+GET {{baseUrl}}/decks

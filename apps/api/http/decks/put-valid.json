@@ -1,0 +1,10 @@
+{
+  "name": "RENAMED — replaced content",
+  "description": "PUT full-replace : rename + isPublic + remplace les lignes (2 lignes / 6 cartes). Id du deck inchange, anciennes lignes supprimees.",
+  "isPublic": true,
+  "leader": { "variantCode": "EB02-010_p2", "languageCode": "en" },
+  "cards": [
+    { "variantCode": "EB01-016", "languageCode": "en", "quantity": 4 },
+    { "variantCode": "EB01-017", "languageCode": "en", "quantity": 2 }
+  ]
+}

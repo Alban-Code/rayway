@@ -9,7 +9,7 @@ Rayway — One Piece TCG companion SaaS: decks, multi-language collection, Ollam
 ## Commands
 
 - Root: `npm run dev:api` / `npm run dev:web`.
-- `apps/api`: `build` / `start:prod` / `lint` / `test` (jest `*.spec.ts`) / `test:e2e`. Ingestion: `npm run ingest:punk`.
+- `apps/api`: `build` / `start:prod` / `lint` / `test` (Vitest `*.spec.ts`, ESM-native) / `test:watch` / `test:cov`. Ingestion: `npm run ingest:punk`.
 - `apps/web`: `build` (tsc -b && vite build) / `lint` / `preview`.
 
 ## Database
@@ -49,6 +49,14 @@ NestJS modules per domain. Routes `/api/`; Swagger `/api/docs`.
 - Typing: `satisfies Prisma.<Model>Include`; DTOs use `!:`; nullable = `field!: T | null` + `@ApiProperty({ nullable: true })`; DTO arrays need `@ApiProperty({ type: [Sub] })`.
 - ⚠️ `main.ts`: `NestFactory.create(AppModule, new ExpressAdapter(), { bodyParser: false })` — explicit adapter (workspace hoisting breaks autodetect), `bodyParser:false` for `@thallesp/nestjs-better-auth`.
 
+### Testing (`apps/api`)
+
+**Vitest** (ESM-native — replaced Jest, which is CJS-first and only "experimental" on ESM). Config `vitest.config.ts`: `globals: true` (Jest-like `describe/it/expect` without imports; `tsconfig` has `"types": ["vitest/globals"]`) + `unplugin-swc` plugin. Specs are `src/**/*.spec.ts`, co-located next to the file under test.
+
+- ⚠️ **swc plugin is mandatory, not cosmetic:** Vitest transpiles via esbuild, which does **not** emit `emitDecoratorMetadata` → NestJS DI (`@Injectable`, constructor injection) breaks in tests without swc. Fine for pure functions today; required the day a service/`Test.createTestingModule` is tested.
+- Assert exceptions with a thunk: `expect(() => fn()).toThrow(BadRequestException)` (type) or `.toThrow(/regex/)` (message). `expect(fn())` (no arrow) throws *before* `expect` captures it.
+- Fixtures for Prisma payloads: forge minimal objects + `as <GetPayload type>` (fill only the fields the code reads) — don't build full rows. See `decks/internal/deck-rules.spec.ts`.
+
 ### Auth (`apps/api/src/auth/`)
 
 **Better Auth** self-hosted (sessions in Postgres via Prisma) + `@thallesp/nestjs-better-auth`. Paid plans later: **Polar.sh**. [[project-auth-payment-stack]], [[rayway-esm-better-auth]].
@@ -62,7 +70,7 @@ NestJS modules per domain. Routes `/api/`; Swagger `/api/docs`.
 - `cards/` ✅ `GET /api/cards` (filters `colors`, `category`, `attribute`, `types`, `cost`, `counter`, `q`, `lang`, `page`, `limit`) + `/:code`. FR-only per lang. Public. **Reference module.**
 - `types/` ✅ `GET /api/types?lang` → `[{code,label}]`. Public, strict-lang (no EN fallback), sorted by label.
 - `auth/` ✅ sign-up/in/session (email+password). `users/` ✅ `GET /api/users/me` (protected).
-- `decks/` ❌ removed — rewrite w/ service constraints (leader type, color intersection, ≤50, ≤4/`Card.code`, no DON!!). [[project-deck-rules]].
+- `decks/` 🚧 `GET /api/decks` (list) · `GET /:id` (detail) · `POST /api/decks` (create) shipped. Build rules enforced in `internal/deck-rules.ts` (`assertDeckRules`) — leader type, color intersection, ≤4/`Card.code`, ≤50, no DON!!/Leader in lines — **unit-tested** (`deck-rules.spec.ts`, 8 cases). ⚠️ rule order = category (Don/Leader) **before** color, else a colorless DON!! trips the color rule. `PATCH`/`DELETE` pending. [[project-deck-rules]].
 - `collection/`, `formats/`, `tags/`, `mentor/` (RAG) — not yet.
 
 ## Web (`apps/web/src`)

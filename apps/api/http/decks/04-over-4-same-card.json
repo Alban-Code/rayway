@@ -1,0 +1,9 @@
+{
+  "name": ">4 exemplaires d'une meme carte (via 2 variantes)",
+  "description": "OP05-119 (base) x4 + OP05-119_p1 x1 = 5 pour le meme Card.code -> viole la regle des <=4.",
+  "leader": { "variantCode": "EB02-010_p2", "languageCode": "en" },
+  "cards": [
+    { "variantCode": "OP05-119", "languageCode": "en", "quantity": 4 },
+    { "variantCode": "OP05-119_p1", "languageCode": "en", "quantity": 1 }
+  ]
+}

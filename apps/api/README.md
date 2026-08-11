@@ -40,9 +40,9 @@ npm run start:dev      # watch mode
 npm run build          # nest build
 npm run start:prod     # run compiled output
 npm run lint           # eslint --fix
-npm run test           # jest unit tests
-npm run test:watch
-npm run test:cov
+npm run test           # vitest unit tests (single run)
+npm run test:watch     # vitest watch mode
+npm run test:cov       # vitest with coverage
 npm run ingest:punk    # ingest cards from buhbbl/punk-records (idempotent, incremental)
 ```
 
@@ -53,7 +53,7 @@ npm run ingest:punk    # ingest cards from buhbbl/punk-records (idempotent, incr
 | `cards/`   | ✅     | `GET /api/cards` (filters + pagination), `GET /api/cards/:code`. Public via `@AllowAnonymous()`. Multi-lang with EN fallback. |
 | `auth/`    | ✅     | Email/password sign-up, sign-in, sessions. OAuth deferred.            |
 | `users/`   | ✅     | `GET /api/users/me`. Protected by the global auth guard.              |
-| `decks/`   | ❌     | Removed, to be rewritten against the new schema.                      |
+| `decks/`   | 🚧     | `GET /api/decks`, `GET /:id`, `POST /api/decks` shipped; build rules (leader, color intersection, ≤4/`Card.code`, ≤50, no DON!!/Leader) enforced in service + unit-tested. `PATCH`/`DELETE` pending. |
 | `collection/`, `formats/`, `types/`, `tags/`, `mentor/` | ❌ | Not yet implemented. |
 
 See [`../../CLAUDE.md`](../../CLAUDE.md) for architecture, conventions, and known gotchas (ESM `.js` extensions, Prisma 7 generator, Better Auth wrapper version sync, etc.).

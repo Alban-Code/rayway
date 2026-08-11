@@ -1,0 +1,6 @@
+{
+  "name": "off-color update",
+  "description": "PUT invalide : carte Red hors deck Green/Purple -> 400 (regle couleur). Doit ne rien muter (atomicite : validation avant ecriture).",
+  "leader": { "variantCode": "EB02-010_p2", "languageCode": "en" },
+  "cards": [ { "variantCode": "EB01-003_p2", "languageCode": "en", "quantity": 1 } ]
+}

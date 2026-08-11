@@ -1,0 +1,20 @@
+{
+  "name": "Deck > 50 cartes (13 cartes distinctes x4 = 52)",
+  "description": "Chaque carte <=4 pour isoler la regle des 50 (sinon la regle des <=4 sauterait avant).",
+  "leader": { "variantCode": "EB02-010_p2", "languageCode": "en" },
+  "cards": [
+    { "variantCode": "EB01-012_p3", "languageCode": "en", "quantity": 4 },
+    { "variantCode": "EB01-013", "languageCode": "en", "quantity": 4 },
+    { "variantCode": "EB01-014_p1", "languageCode": "en", "quantity": 4 },
+    { "variantCode": "EB01-015_p1", "languageCode": "en", "quantity": 4 },
+    { "variantCode": "EB01-016", "languageCode": "en", "quantity": 4 },
+    { "variantCode": "EB01-017", "languageCode": "en", "quantity": 4 },
+    { "variantCode": "EB01-018_p1", "languageCode": "en", "quantity": 4 },
+    { "variantCode": "EB01-019", "languageCode": "en", "quantity": 4 },
+    { "variantCode": "EB01-020", "languageCode": "en", "quantity": 4 },
+    { "variantCode": "EB01-031", "languageCode": "en", "quantity": 4 },
+    { "variantCode": "EB01-032", "languageCode": "en", "quantity": 4 },
+    { "variantCode": "EB01-033", "languageCode": "en", "quantity": 4 },
+    { "variantCode": "EB01-034", "languageCode": "en", "quantity": 4 }
+  ]
+}

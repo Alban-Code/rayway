@@ -1,0 +1,9 @@
+{
+  "name": "Ligne dupliquee (meme variant + meme langue, 2 lignes)",
+  "description": "2+2 = 4 donc la regle des <=4 passe : ce cas isole l'unicite de ligne (Set amont / P2002).",
+  "leader": { "variantCode": "EB02-010_p2", "languageCode": "en" },
+  "cards": [
+    { "variantCode": "EB01-013", "languageCode": "en", "quantity": 2 },
+    { "variantCode": "EB01-013", "languageCode": "en", "quantity": 2 }
+  ]
+}

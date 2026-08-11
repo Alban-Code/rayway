@@ -1,0 +1,146 @@
+### Rayway — tests manuels CYCLE DE VIE deck : POST -> GET -> PUT -> DELETE
+### Extension recommandee : "REST Client" (VS Code) ou HTTP client JetBrains.
+### Les requetes sont NOMMEES (# @name) : l'id du deck cree est reinjecte tout seul
+### dans les PUT/DELETE via {{createDeck.response.body.id}} — lance-les DANS L'ORDRE.
+### Pour Postman : recopie l'id renvoye par le POST dans les URLs des requetes suivantes.
+
+@baseUrl = http://localhost:3000/api
+@origin = http://localhost:5173
+@email = tester@rayway.dev
+@password = password1234
+
+### ─────────────────────────────────────────────────────────────────────────
+### AUTH — la session est un COOKIE ; le client renvoie le cookie tout seul.
+### ⚠️ Better Auth EXIGE un header `Origin` de confiance (trustedOrigins),
+### sinon 403 "MISSING_OR_NULL_ORIGIN". REST Client n'en envoie pas par defaut.
+### ─────────────────────────────────────────────────────────────────────────
+
+### 0a. (une seule fois) creer le compte de test
+POST {{baseUrl}}/auth/sign-up/email
+Content-Type: application/json
+Origin: {{origin}}
+
+{ "email": "{{email}}", "password": "{{password}}", "name": "Tester" }
+
+### 0b. se connecter (pose le cookie de session)
+POST {{baseUrl}}/auth/sign-in/email
+Content-Type: application/json
+Origin: {{origin}}
+
+{ "email": "{{email}}", "password": "{{password}}" }
+
+### ─────────────────────────────────────────────────────────────────────────
+### CYCLE DE VIE
+### ─────────────────────────────────────────────────────────────────────────
+
+### 1. CREATE -> 201 Created (renvoie le DeckDetailDto). Deck de 3 lignes / 12 cartes.
+# @name createDeck
+POST {{baseUrl}}/decks
+Content-Type: application/json
+
+{
+  "name": "Green/Purple Luffy — lifecycle",
+  "isPublic": false,
+  "leader": { "variantCode": "EB02-010_p2", "languageCode": "en" },
+  "cards": [
+    { "variantCode": "EB01-012_p3", "languageCode": "en", "quantity": 4 },
+    { "variantCode": "EB01-013", "languageCode": "en", "quantity": 4 },
+    { "variantCode": "EB01-014_p1", "languageCode": "en", "quantity": 4 }
+  ]
+}
+
+### 2. GET /:id -> 200, confirme l'etat cree (3 lignes / 12 cartes)
+GET {{baseUrl}}/decks/{{createDeck.response.body.id}}
+
+### 3. PUT VALIDE -> 200 : rename + isPublic:true + REMPLACE par 2 lignes / 6 cartes.
+###    A verifier : id INCHANGE, et les 3 anciennes lignes ont disparu (pas d'accumulation).
+PUT {{baseUrl}}/decks/{{createDeck.response.body.id}}
+Content-Type: application/json
+
+{
+  "name": "RENAMED — replaced content",
+  "isPublic": true,
+  "leader": { "variantCode": "EB02-010_p2", "languageCode": "en" },
+  "cards": [
+    { "variantCode": "EB01-016", "languageCode": "en", "quantity": 4 },
+    { "variantCode": "EB01-017", "languageCode": "en", "quantity": 2 }
+  ]
+}
+
+### 4. PUT QUI VIOLE LA REGLE COULEUR -> 400. Doit NE RIEN muter (atomicite).
+PUT {{baseUrl}}/decks/{{createDeck.response.body.id}}
+Content-Type: application/json
+
+{
+  "name": "off-color update",
+  "leader": { "variantCode": "EB02-010_p2", "languageCode": "en" },
+  "cards": [ { "variantCode": "EB01-003_p2", "languageCode": "en", "quantity": 1 } ]
+}
+
+### 5. GET /:id -> 200 : re-confirme l'etat de l'etape 3 (le PUT #4 rate n'a rien change).
+GET {{baseUrl}}/decks/{{createDeck.response.body.id}}
+
+### 6. PUT SUR UN ID INEXISTANT -> 404
+PUT {{baseUrl}}/decks/does-not-exist-id
+Content-Type: application/json
+
+{
+  "name": "ghost",
+  "leader": { "variantCode": "EB02-010_p2", "languageCode": "en" },
+  "cards": [ { "variantCode": "EB01-016", "languageCode": "en", "quantity": 1 } ]
+}
+
+### 7. DELETE -> 204 No Content (corps vide)
+DELETE {{baseUrl}}/decks/{{createDeck.response.body.id}}
+
+### 8. GET apres DELETE -> 404 (le deck n'existe plus)
+GET {{baseUrl}}/decks/{{createDeck.response.body.id}}
+
+### 9. DOUBLE DELETE (meme id, deja parti) -> 404 (assertOwnership attrape avant le .delete)
+DELETE {{baseUrl}}/decks/{{createDeck.response.body.id}}
+
+### ─────────────────────────────────────────────────────────────────────────
+### OWNERSHIP — un 2e user ne doit ni modifier ni supprimer le deck d'un autre.
+### Joue 0a'/0b' pour te connecter en "intruder", cree SON deck, puis reconnecte-toi
+### en tester (0b) et tente PUT/DELETE sur l'id de l'intruder -> 404 les deux fois.
+### ─────────────────────────────────────────────────────────────────────────
+
+### 0a'. compte intruder
+POST {{baseUrl}}/auth/sign-up/email
+Content-Type: application/json
+Origin: {{origin}}
+
+{ "email": "intruder@rayway.dev", "password": "password1234", "name": "Intruder" }
+
+### 0b'. login intruder
+POST {{baseUrl}}/auth/sign-in/email
+Content-Type: application/json
+Origin: {{origin}}
+
+{ "email": "intruder@rayway.dev", "password": "password1234" }
+
+### I1. l'intruder cree son deck -> 201
+# @name intruderDeck
+POST {{baseUrl}}/decks
+Content-Type: application/json
+
+{
+  "name": "intruder deck",
+  "leader": { "variantCode": "EB02-010_p2", "languageCode": "en" },
+  "cards": [ { "variantCode": "EB01-016", "languageCode": "en", "quantity": 1 } ]
+}
+
+### >>> RECONNECTE-TOI EN TESTER (rejoue l'etape 0b) AVANT les 2 requetes suivantes <<<
+
+### I2. tester tente un PUT sur le deck de l'intruder -> 404 (ne revele pas l'existence)
+PUT {{baseUrl}}/decks/{{intruderDeck.response.body.id}}
+Content-Type: application/json
+
+{
+  "name": "hijack",
+  "leader": { "variantCode": "EB02-010_p2", "languageCode": "en" },
+  "cards": [ { "variantCode": "EB01-016", "languageCode": "en", "quantity": 1 } ]
+}
+
+### I3. tester tente un DELETE sur le deck de l'intruder -> 404
+DELETE {{baseUrl}}/decks/{{intruderDeck.response.body.id}}

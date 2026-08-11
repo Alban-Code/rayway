@@ -1,0 +1,7 @@
+{
+  "name": "Leader invalide (un Character comme leader)",
+  "leader": { "variantCode": "EB01-014_p1", "languageCode": "en" },
+  "cards": [
+    { "variantCode": "EB01-013", "languageCode": "en", "quantity": 4 }
+  ]
+}

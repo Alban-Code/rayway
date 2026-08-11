@@ -27,3 +27,5 @@ export const deckDetailInclude = () => ({
 } satisfies Prisma.DeckInclude);
 
 export type DeckDetailWithRelations = Prisma.DeckGetPayload<{ include: ReturnType<typeof deckDetailInclude> }>;
+
+export type ResolvedVariant = Prisma.CardVariantGetPayload<{ include: { card: { select: { id: true, code: true, category: true, colors: true } } } }>;
