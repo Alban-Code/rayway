@@ -30,5 +30,4 @@ export class DeckQueryDto {
     @Max(100)
     @ApiPropertyOptional({ minimum: 1, maximum: 100, default: 20 })
     limit?: number = 20;
-
 }
