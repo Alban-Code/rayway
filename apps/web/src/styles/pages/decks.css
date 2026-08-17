@@ -1,0 +1,146 @@
+/* Signature deck tile — leader art poster with an info scrim.
+   Mirrors .card-tile conventions: identity colors come from inline
+   --id-color-a/-b (see idColorStyle), the leader art from --art-image. */
+
+.deck-tile {
+    --id-color: var(--id-color-a, var(--accent));
+    position: relative;
+    display: block;
+    aspect-ratio: 16 / 10;
+    border-radius: var(--r-card);
+    overflow: hidden;
+    isolation: isolate;
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+    background: var(--bg-panel-2);
+    border: 1px solid var(--border-2);
+    box-shadow: var(--shadow-card-rest);
+    transition: transform 220ms var(--ease-out), box-shadow 220ms var(--ease-out);
+}
+
+/* Art layer — falls back to the identity gradient when no image exists (FR gaps). */
+.deck-tile__art {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background:
+        radial-gradient(ellipse at 30% 20%, color-mix(in oklch, var(--id-color-a, var(--accent)) 70%, transparent), transparent 60%),
+        linear-gradient(160deg,
+            color-mix(in oklch, var(--id-color-a, var(--accent)) 36%, oklch(0.22 0.04 280)),
+            color-mix(in oklch, var(--id-color-b, var(--accent)) 36%, oklch(0.14 0.02 280)));
+}
+
+.deck-tile__art.has-image {
+    background-image: var(--art-image);
+    background-size: cover;
+    background-position: center 22%;
+}
+
+/* Bottom scrim so the text stays legible over any art. */
+.deck-tile__art::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom,
+        transparent 30%,
+        color-mix(in oklch, var(--bg-canvas) 55%, transparent) 62%,
+        var(--bg-canvas) 100%);
+}
+
+/* Top identity bar, same as the card tile. */
+.deck-tile__bar {
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 3px;
+    z-index: 2;
+    background: linear-gradient(90deg, var(--id-color-a, var(--accent)), var(--id-color-b, var(--accent)));
+    box-shadow: 0 0 10px var(--id-color-a, var(--accent));
+}
+
+/* Text block, anchored to the bottom over the scrim. */
+.deck-tile__body {
+    position: absolute;
+    inset: auto 0 0 0;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding: var(--space-4);
+}
+
+.deck-tile__title-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.deck-tile__name {
+    flex: 1;
+    min-width: 0;
+    font-weight: 700;
+    font-size: 1.05rem;
+    line-height: 1.2;
+    color: var(--fg-1);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.deck-tile__badge {
+    flex-shrink: 0;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: var(--r-pill);
+    color: var(--accent-fg);
+    background: var(--accent);
+}
+
+.deck-tile__desc {
+    font-size: 0.8rem;
+    color: var(--fg-3);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.deck-tile__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: var(--space-1);
+}
+
+.deck-tile__pips {
+    display: flex;
+    gap: var(--space-1);
+}
+
+.deck-tile__pip {
+    width: 12px;
+    height: 12px;
+    border-radius: var(--r-pill);
+    box-shadow: 0 0 0 1px color-mix(in oklch, black 25%, transparent),
+        0 0 8px color-mix(in oklch, var(--pip, var(--accent)) 60%, transparent);
+    background: var(--pip, var(--accent));
+}
+
+.deck-tile__count {
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--fg-2);
+}
+
+/* Hover: lift + twin identity glow, echoing .card-tile. */
+.deck-tile:hover {
+    transform: translateY(-4px);
+    box-shadow:
+        0 0 0 1px color-mix(in oklch, var(--id-color-a, var(--accent)) 50%, transparent),
+        -14px 0 34px color-mix(in oklch, var(--id-color-a, var(--accent)) 26%, transparent),
+        14px 0 34px color-mix(in oklch, var(--id-color-b, var(--accent)) 26%, transparent),
+        var(--shadow-card-hover);
+}

@@ -20,7 +20,10 @@ export function Navbar() {
             <div className="flex items-center gap-6">
                 <NavLink to="/" end className={navLinkClass}>Home</NavLink>
                 <NavLink to="/cards" className={navLinkClass}>Cards</NavLink>
+                {data && <NavLink to="decks" className={navLinkClass}>Decks</NavLink>}
             </div>
+
+
 
             <div className="flex items-center gap-2">
                 {data ? (
