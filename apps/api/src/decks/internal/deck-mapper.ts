@@ -51,12 +51,40 @@ function mapDeckCard(line: DeckDetailWithRelations["cards"][number]): DeckCardDt
             imageUrl: buildImageUrl(line.variant.images
                 .find(i => i.languageCode === line.languageCode)?.storageKey),
         },
+        attributes: line.variant.card.attributes,
+        rarity: line.variant.card.rarity,
+        types: line.variant.card.types.map((ct) => ({
+            code: ct.type.code,
+            label: ct.type.translations.find(t => t.languageCode === line.languageCode)?.label ?? "",
+        })),
+        effect: line.variant.card.translations
+            .find(t => t.languageCode === line.languageCode)?.effect ?? null,
+        triggerEffect: line.variant.card.translations
+            .find(t => t.languageCode === line.languageCode)?.triggerEffect ?? null,
+        category: line.variant.card.category,
+        colors: line.variant.card.colors,
+        cost: line.variant.card.cost,
+        counterAmount: line.variant.card.counterAmount,
+        power: line.variant.card.power,
     };
 }
 
 export function mapDeckDetail(deck: DeckDetailWithRelations): DeckDetailDto {
+    const base = mapDeckBase(deck);
+    const t = deck.leaderVariant.card.translations.find(x => x.languageCode === deck.leaderLanguageCode);
     return {
-        ...mapDeckBase(deck),
+        ...base,
+        leader: {
+            ...base.leader,
+            power: deck.leaderVariant.card.power,
+            life: deck.leaderVariant.card.life,
+            effect: t?.effect ?? null,
+            types: deck.leaderVariant.card.types.map(ct => ({
+                code: ct.type.code,
+                label: ct.type.translations.find(x => x.languageCode === deck.leaderLanguageCode)?.label ?? "",
+            })),
+            attributes: deck.leaderVariant.card.attributes
+        },
         cards: deck.cards.map(mapDeckCard)
     }
 }

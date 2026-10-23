@@ -1,8 +1,10 @@
 import type { CardListItemDto } from "@/api/cards"
 import { renderEffect } from "@/lib/renderEffects"
 
+// Structural prop: any card-like carrying the two effect texts (CardListItemDto
+// or DeckCardDto) can reuse this presentational block.
 type CardDetailEffectsProps = {
-    card: CardListItemDto
+    card: Pick<CardListItemDto, "effect" | "triggerEffect">
 }
 
 export function CardDetailEffects({ card }: CardDetailEffectsProps) {

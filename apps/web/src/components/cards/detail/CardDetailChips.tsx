@@ -3,8 +3,10 @@ import { Badge } from "@/components/ui/badge"
 import type { CSSProperties } from "react"
 import { COLOR_VARS } from "@/lib/cardColors"
 
+// Structural prop: any card-like carrying these three lists (CardListItemDto
+// or DeckCardDto) can reuse this presentational chip row.
 type CardDetailChipsProps = {
-    card: CardListItemDto
+    card: Pick<CardListItemDto, "colors" | "types" | "attributes">
 }
 
 export function CardDetailChips({ card }: CardDetailChipsProps) {

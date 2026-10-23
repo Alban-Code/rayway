@@ -15,12 +15,32 @@ export type DeckWithRelations = Prisma.DeckGetPayload<{ include: ReturnType<type
 export const deckDetailInclude = () => ({
     cards: {
         include: {
-            variant: { include: { card: { include: { translations: true } }, images: true } }
+            variant: {
+                include: {
+                    card: {
+                        include: {
+                            translations: true,
+                            types: {
+                                include: { type: { include: { translations: true } } },
+                                orderBy: { order: "asc" }
+                            }
+                        }
+                    }, images: true
+                }
+            }
         }
     },
     leaderVariant: {
         include: {
-            card: { include: { translations: true } },
+            card: {
+                include: {
+                    translations: true,
+                    types: {
+                        include: { type: { include: { translations: true } } },
+                        orderBy: { order: "asc" }
+                    }
+                }
+            },
             images: true
         }
     }

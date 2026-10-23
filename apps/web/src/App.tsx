@@ -8,6 +8,8 @@ import { CardDetailSheet } from "@/components/cards/detail/CardDetailSheet";
 import { AppLayout } from "@/components/layouts/AppLayout";
 import { Home } from "@/pages/Home";
 import { DecksPage } from "@/pages/DecksPage";
+import { DeckDetailPage } from "./pages/DeckDetailPage";
+import { DeckCardSheet } from "@/components/decks/detail/DeckCardSheet";
 
 const router = createBrowserRouter([
   {
@@ -30,7 +32,12 @@ const router = createBrowserRouter([
         element: <RequireAuth />,
         children: [
           { path: '/account', element: <AccountPage /> },
-          { path: '/decks', element: <DecksPage /> }
+          { path: '/decks', element: <DecksPage /> },
+          {
+            path: "/decks/:id", element: <DeckDetailPage />, children: [
+              { path: "/decks/:id/:variantCode", element: <DeckCardSheet /> }
+            ]
+          }
         ]
       },
     ]

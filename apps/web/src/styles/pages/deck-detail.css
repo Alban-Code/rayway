@@ -1,0 +1,336 @@
+/* Deck detail page — scroll container inside AppLayout's flex region.
+   --id-color-a/-b (idColorStyle) is set on the root so both the header
+   and the cost curve inherit the leader identity. */
+
+.deck-detail {
+    height: 100%;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    padding: var(--space-6);
+    max-width: 88rem;
+    margin-inline: auto;
+}
+
+/* Two columns: the card grid grows, the stats rail stays fixed-width and
+   sticks while the grid scrolls. Collapses to one column when narrow. */
+.deck-detail__body {
+    display: grid;
+    grid-template-columns: 1fr minmax(16rem, 20rem);
+    gap: var(--space-6);
+    align-items: start;
+}
+
+@media (max-width: 60rem) {
+    .deck-detail__body {
+        grid-template-columns: 1fr;
+    }
+}
+
+.deck-detail__aside {
+    position: sticky;
+    top: var(--space-2);
+}
+
+/* ── Hero header — echoes the .deck-tile poster, scaled up to a full-width
+   identity banner. Leader art comes from --art-image. */
+
+.deck-header {
+    --id-color: var(--id-color-a, var(--accent));
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    border-radius: var(--r-card);
+    border: 1px solid var(--border-2);
+    background: var(--bg-panel-2);
+    box-shadow: var(--shadow-card-rest);
+}
+
+/* Art layer — falls back to the identity gradient when the leader has no
+   image (FR gaps), same contract as .deck-tile__art. */
+.deck-header__art {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background:
+        radial-gradient(ellipse at 75% 15%, color-mix(in oklch, var(--id-color-a, var(--accent)) 60%, transparent), transparent 60%),
+        linear-gradient(120deg,
+            color-mix(in oklch, var(--id-color-a, var(--accent)) 34%, oklch(0.20 0.03 280)),
+            color-mix(in oklch, var(--id-color-b, var(--accent)) 34%, oklch(0.13 0.02 280)));
+}
+
+.deck-header__art.has-image {
+    background-image: var(--art-image);
+    background-size: cover;
+    background-position: center 18%;
+}
+
+/* Left + bottom scrim: the art breathes on the right, text stays legible
+   on the left over a solid canvas wash. */
+.deck-header__art::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(to right,
+            var(--bg-canvas) 2%,
+            color-mix(in oklch, var(--bg-canvas) 62%, transparent) 46%,
+            transparent 78%),
+        linear-gradient(to top, var(--bg-canvas) 0%, transparent 58%);
+}
+
+/* Top identity bar, same signature as the card/deck tiles. */
+.deck-header__bar {
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 3px;
+    z-index: 2;
+    background: linear-gradient(90deg, var(--id-color-a, var(--accent)), var(--id-color-b, var(--accent)));
+    box-shadow: 0 0 12px var(--id-color-a, var(--accent));
+}
+
+/* Text block anchored to the bottom-left over the scrim. */
+.deck-header__body {
+    position: relative;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: var(--space-2);
+    padding: var(--space-6);
+    min-height: 15rem;
+    max-width: 46rem;
+}
+
+.deck-header__title-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.deck-header__name {
+    font-weight: 800;
+    font-size: clamp(1.5rem, 3vw, 2.25rem);
+    line-height: 1.1;
+    color: var(--fg-1);
+}
+
+.deck-header__badge {
+    flex-shrink: 0;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: var(--r-pill);
+    color: var(--accent-fg);
+    background: var(--accent);
+}
+
+.deck-header__leader {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--fg-2);
+}
+
+.deck-header__desc {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--fg-3);
+    max-width: 38rem;
+}
+
+.deck-header__meta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    margin-top: var(--space-1);
+}
+
+.deck-header__pips {
+    display: flex;
+    gap: var(--space-1);
+}
+
+.deck-header__pip {
+    width: 14px;
+    height: 14px;
+    border-radius: var(--r-pill);
+    background: var(--pip, var(--accent));
+    box-shadow: 0 0 0 1px color-mix(in oklch, black 25%, transparent),
+        0 0 8px color-mix(in oklch, var(--pip, var(--accent)) 60%, transparent);
+}
+
+.deck-header__count {
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--fg-1);
+}
+
+/* ── Card grid ─────────────────────────────────────────────────────────
+   Flat grid of card images (ordered category → cost upstream). Each tile
+   is a "deck of copies": the front face plus quantity-1 offset layers
+   sharing the same --tile-image, for a fanned-pack look. */
+
+.deck-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+    /* extra column gap absorbs the pile's rightward fan */
+    gap: var(--space-6) var(--space-5);
+    padding: var(--space-2);
+}
+
+.deck-card-tile {
+    --tile-radius: calc(var(--r-card) * 0.66);
+    position: relative;
+    aspect-ratio: 5 / 7;
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    isolation: isolate;
+    transition: transform 200ms var(--ease-out);
+}
+
+/* Front face — the interactive card image, or an identity gradient when
+   the variant has no art (FR image gaps). */
+.deck-card-tile__face {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    border-radius: var(--tile-radius);
+    border: 1px solid var(--border-2);
+    background:
+        linear-gradient(150deg,
+            color-mix(in oklch, var(--tile-color, var(--accent)) 40%, var(--bg-panel-2)),
+            var(--bg-panel));
+    box-shadow: var(--shadow-card-rest);
+}
+
+.deck-card-tile.has-image .deck-card-tile__face {
+    background-image: var(--tile-image);
+    background-size: cover;
+    background-position: center;
+}
+
+/* Offset copies fanned behind the face — same art, dimmed, stepped by --i. */
+.deck-card-tile__layer {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    border-radius: var(--tile-radius);
+    border: 1px solid var(--border-2);
+    background:
+        linear-gradient(150deg,
+            color-mix(in oklch, var(--tile-color, var(--accent)) 40%, var(--bg-panel-2)),
+            var(--bg-panel));
+    transform: translate(calc(var(--i) * 5px), calc(var(--i) * -5px));
+    filter: brightness(calc(1 - var(--i) * 0.12));
+    box-shadow: var(--shadow-card-rest);
+}
+
+.deck-card-tile.has-image .deck-card-tile__layer {
+    background-image: var(--tile-image);
+    background-size: cover;
+    background-position: center;
+}
+
+/* Quantity — always written, bottom-right of the face. */
+.deck-card-tile__qty {
+    position: absolute;
+    z-index: 3;
+    right: var(--space-2);
+    bottom: var(--space-2);
+    min-width: 1.6rem;
+    padding: 2px 7px;
+    text-align: center;
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 0.82rem;
+    font-weight: 700;
+    line-height: 1.3;
+    color: var(--fg-1);
+    background: color-mix(in oklch, var(--bg-canvas) 82%, transparent);
+    border: 1px solid var(--border-2);
+    border-radius: var(--r-pill);
+    backdrop-filter: blur(4px);
+}
+
+.deck-card-tile:hover {
+    transform: translateY(-4px);
+}
+
+.deck-card-tile:hover .deck-card-tile__face {
+    box-shadow:
+        0 0 0 1px color-mix(in oklch, var(--tile-color, var(--accent)) 55%, transparent),
+        var(--shadow-card-hover);
+}
+
+/* ── Stats rail ────────────────────────────────────────────────────────
+   Category counts, cost curve and counter breakdown, stacked in a panel. */
+
+.deck-stats {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    padding: var(--space-5);
+    border-radius: var(--r-card);
+    border: 1px solid var(--border-2);
+    background: var(--bg-panel);
+    box-shadow: var(--shadow-card-rest);
+}
+
+.deck-stats__section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.deck-stats__title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--fg-3);
+}
+
+.deck-stats__tiles {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-2);
+}
+
+.deck-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: var(--space-3) var(--space-2);
+    border-radius: var(--r-md);
+    background: var(--bg-panel-2);
+    border: 1px solid var(--border-2);
+}
+
+.deck-stat__value {
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--fg-1);
+}
+
+.deck-stat__label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: var(--fg-3);
+    text-align: center;
+}
+
+/* Recharts container height (width comes from the responsive wrapper). */
+.cost-curve {
+    width: 100%;
+    height: 11rem;
+}

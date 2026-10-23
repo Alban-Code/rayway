@@ -1,6 +1,6 @@
-import { ApiProperty } from "@nestjs/swagger";
-import { CardVariantDto } from "../../cards/dto/card-response.dto.js";
-import { Color } from "../../generated/prisma/enums.js";
+import { ApiProperty, OmitType } from "@nestjs/swagger";
+import { CardTypeDto, CardVariantDto } from "../../cards/dto/card-response.dto.js";
+import { Attribute, Category, Color, Rarity } from "../../generated/prisma/enums.js";
 
 export class DeckLeaderDto {
     @ApiProperty({ type: String, description: "Variant code of the deck's leader", example: "OP01-001" })
@@ -19,6 +19,23 @@ export class DeckLeaderDto {
     colors!: Color[];
 }
 
+export class DeckLeaderDetailDto extends DeckLeaderDto {
+    @ApiProperty({ isArray: true, enum: Attribute })
+    attributes!: Attribute[];
+
+    @ApiProperty({ type: [CardTypeDto] })
+    types!: CardTypeDto[];
+
+    @ApiProperty({ type: String, nullable: true })
+    effect!: string | null;
+
+    @ApiProperty({ type: Number, nullable: true })
+    power!: number | null;
+
+    @ApiProperty({ type: Number })
+    life!: number | null;
+}
+
 export class DeckCardDto {
     @ApiProperty({ type: String, example: "Nami" })
     name!: string;
@@ -31,6 +48,36 @@ export class DeckCardDto {
 
     @ApiProperty({ type: Number, minimum: 1, maximum: 4, description: "Number of copies of this card (1-4)" })
     quantity!: number;
+
+    @ApiProperty({ isArray: true, enum: Attribute })
+    attributes!: Attribute[];
+
+    @ApiProperty({ enum: Rarity })
+    rarity!: Rarity;
+
+    @ApiProperty({ type: [CardTypeDto] })
+    types!: CardTypeDto[];
+
+    @ApiProperty({ type: String, nullable: true })
+    effect!: string | null;
+
+    @ApiProperty({ type: String, nullable: true })
+    triggerEffect!: string | null;
+
+    @ApiProperty({ enum: Category, example: "Leader" })
+    category!: Category;
+
+    @ApiProperty({ isArray: true, enum: Color })
+    colors!: Color[];
+
+    @ApiProperty({ type: Number, nullable: true })
+    cost!: number | null;
+
+    @ApiProperty({ type: Number, nullable: true })
+    counterAmount!: number | null;
+
+    @ApiProperty({ type: Number, nullable: true })
+    power!: number | null;
 }
 
 export class DeckListItemDto {
@@ -73,7 +120,10 @@ export class PaginatedDecksDto {
     limit!: number;
 }
 
-export class DeckDetailDto extends DeckListItemDto {
+export class DeckDetailDto extends OmitType(DeckListItemDto, ['leader'] as const) {
+    @ApiProperty({ type: DeckLeaderDetailDto })
+    leader!: DeckLeaderDetailDto;
+
     @ApiProperty({ type: [DeckCardDto] })
     cards!: DeckCardDto[];
 }

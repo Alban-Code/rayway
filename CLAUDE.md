@@ -10,7 +10,7 @@ Rayway — One Piece TCG companion SaaS: decks, multi-language collection, Ollam
 
 - Root: `npm run dev:api` / `npm run dev:web`.
 - `apps/api`: `build` / `start:prod` / `lint` / `test` (Vitest `*.spec.ts`, ESM-native) / `test:watch` / `test:cov`. Ingestion: `npm run ingest:punk`.
-- `apps/web`: `build` (tsc -b && vite build) / `lint` / `preview`.
+- `apps/web`: `build` (tsc -b && vite build) / `lint` / `preview` / `test` (Vitest, added 2026-08-18 — see Web testing below).
 
 ## Database
 
@@ -70,7 +70,7 @@ NestJS modules per domain. Routes `/api/`; Swagger `/api/docs`.
 - `cards/` ✅ `GET /api/cards` (filters `colors`, `category`, `attribute`, `types`, `cost`, `counter`, `q`, `lang`, `page`, `limit`) + `/:code`. FR-only per lang. Public. **Reference module.**
 - `types/` ✅ `GET /api/types?lang` → `[{code,label}]`. Public, strict-lang (no EN fallback), sorted by label.
 - `auth/` ✅ sign-up/in/session (email+password). `users/` ✅ `GET /api/users/me` (protected).
-- `decks/` 🚧 `GET /api/decks` (list) · `GET /:id` (detail) · `POST /api/decks` (create) shipped. Build rules enforced in `internal/deck-rules.ts` (`assertDeckRules`) — leader type, color intersection, ≤4/`Card.code`, ≤50, no DON!!/Leader in lines — **unit-tested** (`deck-rules.spec.ts`, 8 cases). ⚠️ rule order = category (Don/Leader) **before** color, else a colorless DON!! trips the color rule. `PATCH`/`DELETE` pending. [[project-deck-rules]].
+- `decks/` ✅ **CRUD complet** : `GET /api/decks` (list) · `GET /:id` (detail) · `POST` · `PUT /:id` (full-replace, atomic `deck.update` deleteMany+create, stable id) · `DELETE /:id` (204, `assertOwnership`→404). Build rules in `internal/deck-rules.ts` (`assertDeckRules`) — leader type, color intersection, ≤4/`Card.code`, ≤50, no DON!!/Leader in lines — **unit-tested** (`deck-rules.spec.ts`, 8 cases). ⚠️ rule order = category (Don/Leader) **before** color, else a colorless DON!! trips the color rule. **Detail DTO enriched (2026-08-18)** for the front detail page: `DeckCardDto` carries card stats (`category`/`cost`/`counterAmount`/`colors`/`power`/`types`/`effect`…); leader enriched **detail-only** via `DeckLeaderDetailDto` + `DeckDetailDto extends OmitType(DeckListItemDto,['leader'])` (redeclaring a class field = TS2612 + decorators can't sit on `declare` → `OmitType` is the clean fix); `types` join added to `deckDetailInclude` (cards+leader) only, list `deckInclude` stays slim; `mapDeckBase` shared → leader enrichment done in `mapDeckDetail` to keep list light. [[project-deck-rules]].
 - `collection/`, `formats/`, `tags/`, `mentor/` (RAG) — not yet.
 
 ## Web (`apps/web/src`)
@@ -103,3 +103,11 @@ React 19 SPA / Vite. **Done:** auth · cards browsing (list + filters + detail p
 - **URL search preservation:** internal nav in a URL-state feature must propagate `location.search` (`CardThumb` Link, sheet-close navigate).
 
 **Next on Cards:** facet `rarity` (enum → like category) · fix `activeCount` (excludes `costs`/`counters` → wrong badge) · anti-flash (dim on `isPlaceholderData`, prefetch next page).
+
+### Web testing (Vitest, added 2026-08-18)
+
+`apps/web` had **no test runner** until 2026-08-18; now Vitest `^4` is wired (mirrors the API). Config lives **in `vite.config.ts`** (`import { defineConfig } from 'vitest/config'` + `test: { globals: true, include: ['src/**/*.spec.ts'], environment: 'node' }`) — merged, not a separate config, so the `@` alias + plugins carry over for future component tests. `tsconfig.app.json` has `"vitest/globals"` in `types`. **No swc** here (no decorators, unlike the API). Run `npm test -w apps/web -- --run`. First spec: `lib/deckGrouping.spec.ts`. [[rayway-web-testing]].
+
+### Decks web — étape 2 detail `/decks/:id` (🚧 in progress, 2026-08-18)
+
+Pipeline + pure logic done, rendering left. ⚠️ **Detail route = full page, SIBLING of `/decks` (not nested)** — deliberate contrast with `/cards/:code` which IS nested (side-sheet via `<Outlet/>`). `useDeckDetail` uses `queryKey ['deck', id]` and **no `keepPreviousData`** (a detail page is a fresh nav, not pagination). `lib/deckGrouping.ts` (`groupByCategory` + `costHistogram`, buckets 0–10, holes kept) **done + Vitest-tested**. Remaining: `components/decks/detail/{DeckHeader, CategorySection, CostCurve}` (CostCurve = shadcn chart / Recharts, `npx shadcn add chart` not yet installed) + `styles/pages/deck-detail.css`. Full detail in [[project-auth-slice-status]] and [[project-deck-rules]]. NB unrelated pre-existing build blocker: `pages/AccountPage.tsx` unused `error` var trips `noUnusedLocals`.

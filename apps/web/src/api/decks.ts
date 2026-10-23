@@ -1,4 +1,4 @@
-import type { CardVariantDto, Color } from "./cards";
+import type { Attribute, CardTypeDto, CardVariantDto, Category, Color, Rarity } from "./cards";
 import { api } from "./client";
 
 
@@ -32,11 +32,29 @@ export type DeckLeaderDto = {
     colors: Color[];
 }
 
+export type DeckLeaderDetailDto = DeckLeaderDto & {
+    attributes: Attribute[];
+    types: CardTypeDto[];
+    effect: string | null;
+    power: number | null;
+    life: number | null;
+}
+
 export type DeckCardDto = {
     name: string;
     languageCode: string;
     variant: CardVariantDto;
     quantity: number;
+    attributes: Attribute[];
+    rarity: Rarity;
+    types: CardTypeDto[];
+    effect: string | null;
+    triggerEffect: string | null;
+    category: Category;
+    colors: Color[];
+    cost: number | null;
+    counterAmount: number | null;
+    power: number | null;
 }
 
 export type DeckListItemDto = {
@@ -58,6 +76,7 @@ export type PaginatedDecksDto = {
 }
 
 export type DeckDetailDto = DeckListItemDto & {
+    leader: DeckLeaderDetailDto;
     cards: DeckCardDto[];
 }
 
@@ -80,4 +99,9 @@ export async function fetchDecks(params: DeckListParams = {}): Promise<Paginated
     const path = `/decks${queryString.toString() ? `?${queryString}` : ''}`;
 
     return api<PaginatedDecksDto>(path);
+}
+
+export async function fetchDeck(deckId: string): Promise<DeckDetailDto> {
+    const path = `/decks/${deckId}`;
+    return api<DeckDetailDto>(path);
 }

@@ -1,7 +1,9 @@
 import type { CardListItemDto } from "@/api/cards"
 
+// Structural prop: any card-like carrying these stats can reuse this block.
+// `life` is optional — deck lines (Character/Event/Stage) don't carry it.
 type CardDetailStatsProps = {
-    card: CardListItemDto
+    card: Pick<CardListItemDto, "cost" | "power" | "counterAmount"> & { life?: number | null }
 }
 
 function Stat({ label, value }: { label: string; value: number }) {
@@ -18,7 +20,7 @@ export function CardDetailStats({ card }: CardDetailStatsProps) {
         card.cost !== null && <Stat key="cost" label="Cost" value={card.cost} />,
         card.power !== null && <Stat key="power" label="Power" value={card.power} />,
         card.counterAmount !== null && <Stat key="counter" label="Counter" value={card.counterAmount} />,
-        card.life !== null && <Stat key="life" label="Life" value={card.life} />,
+        card.life != null && <Stat key="life" label="Life" value={card.life} />,
     ].filter(Boolean)
 
     if (stats.length === 0) return null
