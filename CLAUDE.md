@@ -111,3 +111,13 @@ React 19 SPA / Vite. **Done:** auth · cards browsing (list + filters + detail p
 ### Decks web — étape 2 detail `/decks/:id` (🚧 in progress, 2026-08-18)
 
 Pipeline + pure logic done, rendering left. ⚠️ **Detail route = full page, SIBLING of `/decks` (not nested)** — deliberate contrast with `/cards/:code` which IS nested (side-sheet via `<Outlet/>`). `useDeckDetail` uses `queryKey ['deck', id]` and **no `keepPreviousData`** (a detail page is a fresh nav, not pagination). `lib/deckGrouping.ts` (`groupByCategory` + `costHistogram`, buckets 0–10, holes kept) **done + Vitest-tested**. Remaining: `components/decks/detail/{DeckHeader, CategorySection, CostCurve}` (CostCurve = shadcn chart / Recharts, `npx shadcn add chart` not yet installed) + `styles/pages/deck-detail.css`. Full detail in [[project-auth-slice-status]] and [[project-deck-rules]]. NB unrelated pre-existing build blocker: `pages/AccountPage.tsx` unused `error` var trips `noUnusedLocals`.
+
+## AI service (`apps/ai`, Python, added 2026-10-24)
+
+Local One Piece TCG **coach**: Ollama (`qwen3.5:9b`, runs inside WSL, `localhost:11434`) + direct read-only Postgres access + hand-written tool-calling loop. Independent of NestJS (not an npm workspace). Roadmap: env ✅ · local LLM ✅ · card data ✅ · **next: explore/parse SIM game logs** · analysis · FastAPI/NestJS integration · video. Full state, TODOs and gotchas: [[project-ai-service]]; working mode (user types commands and writes the code, Claude explains/reviews): [[feedback-user-runs-commands]].
+
+- Layout: `pyproject.toml` · `.venv/` (gitignored) · `scripts/` (manual try-outs) · `src/rayway_ai/{cards/repository.py, llm/chat.py}`. Setup: `python3 -m venv .venv && source .venv/bin/activate && pip install -e .`. Env in `apps/ai/.env`: `DATABASE_URL` (role `rayway_ai`, **SELECT only**), `OLLAMA_URL`. Never print secrets.
+- Postgres runs in Docker Desktop on Windows (start the container first), reachable from WSL on `localhost:5432`.
+- ⚠️ Card data for the coach is **always English** + optional `name_fr`; the web "no EN fallback" rule applies to display only.
+- ⚠️ Prisma identifiers are quoted in SQL (`"Card"`, `"cardId"`). Enum-array columns need `::text[]` or psycopg returns `"{Red}"` strings.
+- ⚠️ The raw model hallucinates game rules (e.g. Leader "HP", "cannot be attacked"): rules/facts must come from tools or a deterministic engine, never from model memory.
