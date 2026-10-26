@@ -7,7 +7,7 @@ from psycopg.rows import dict_row
 load_dotenv()
 
 GET_CARD_BY_CODE = """
-SELECT c."code", c."category", c."colors", c."cost", c."power", c."life", c."counterAmount", c."attributes", en."name" AS name_en, fr."name" AS name_fr, en."effect", en."triggerEffect"
+SELECT c."code", c."category", c."colors"::text[], c."cost", c."power", c."life", c."counterAmount", c."attributes"::text[], en."name" AS name_en, fr."name" AS name_fr, en."effect", en."triggerEffect"
 FROM "Card" c
 JOIN "CardTranslation" en ON en."cardId" = c."id" AND en."languageCode" = 'en'
 LEFT JOIN "CardTranslation" fr ON fr."cardId" = c."id" AND fr."languageCode" = 'fr'
@@ -15,7 +15,7 @@ WHERE c."code" = %s
 """
 
 SEARCH_CARD_BY_TEXT = """
-SELECT c."code", c."category", c."colors", c."cost", c."power", c."life", c."counterAmount", c."attributes", en."name" AS name_en, fr."name" AS name_fr
+SELECT c."code", c."category", c."colors"::text[], c."cost", en."name" AS name_en, fr."name" AS name_fr
 FROM "Card" c
 JOIN "CardTranslation" en ON en."cardId" = c."id" AND en."languageCode" = 'en'
 LEFT JOIN "CardTranslation" fr ON fr."cardId" = c."id" AND fr."languageCode" = 'fr'

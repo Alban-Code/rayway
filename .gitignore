@@ -33,3 +33,8 @@ maquettes/
 __pycache__/
 *.pyc
 *.egg-info/
+# AI service: copyrighted rule PDFs and unknown-content SIM logs
+apps/ai/data/
+
+# graphify output
+graphify-out/

@@ -1,0 +1,33 @@
+# Dependencies and build outputs
+node_modules/
+dist/
+build/
+.venv/
+__pycache__/
+*.egg-info/
+
+# Generated code (Prisma client)
+apps/api/src/generated/
+
+# Self-hosted card images and local storage
+apps/api/storage/
+
+# Lockfiles (noise, no architecture signal)
+package-lock.json
+
+# Design mockups (inspiration only)
+maquettes/
+
+# AI service: copyrighted rule PDFs and SIM logs
+apps/ai/data/
+
+# Secrets and logs
+.env
+.env.*
+*.log
+
+# Tooling
+.git/
+.vscode/
+.idea/
+graphify-out/

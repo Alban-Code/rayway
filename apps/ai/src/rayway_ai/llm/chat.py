@@ -1,5 +1,6 @@
 import json
 import os
+from pathlib import Path
 
 import httpx
 from dotenv import load_dotenv
@@ -12,13 +13,22 @@ OLLAMA_URL = os.environ["OLLAMA_URL"]
 MODEL = "qwen3.5:9b"
 MAX_STEPS = 5
 
-SYSTEM_PROMPT = """
-You must answer in the user's language.
-Only talk about a card you previously searched via the tools.
-Say clearly when you do not find informations about a card or the card itself, do not make up things.
-Never make up new rules that do not exist.
-If the user speaks french, answer in french.
+RULES = Path(__file__).with_name("rules.md").read_text(encoding="utf-8")
+
+BEHAVIOR = """You are a coach for the One Piece Card Game.
+
+Language:
+- Answer in the language of the user's last message.
+- If the user writes in French and a card has name_fr, use name_fr; otherwise use name_en.
+
+Facts:
+- Only state facts about a card that come from the tools. Look cards up with the tools before talking about them.
+- If a card or a piece of information is not found, say so clearly. Do not guess.
+- A null field means the card's category has no such value (see the rules below). Do not mention it and never replace it with a made-up value.
+- Use only the rules below. If the rules do not cover a question, say you are not sure instead of inventing a rule.
 """
+
+SYSTEM_PROMPT = f"{BEHAVIOR}\n{RULES}"
 
 TOOLS = [{
     "type": "function",
@@ -38,7 +48,7 @@ TOOLS = [{
     "type": "function",
     "function": {
       "name": "search_cards",
-      "description": "Search for a card via the name in french or english",
+      "description": "Search cards by name (french or english). Returns only a short summary (code, names, category, cost, colors), up to 10 results. Then use get_card with the code to get power, life, counter, attributes and effect text.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -60,6 +70,7 @@ def chat(messages: list[dict]) -> dict:
             "model": MODEL,
             "stream": False,
             "think": False,
+            "options": {"num_ctx": 8192},
             "messages": messages,
             "tools": TOOLS
         },
