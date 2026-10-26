@@ -114,10 +114,22 @@ Pipeline + pure logic done, rendering left. ⚠️ **Detail route = full page, S
 
 ## AI service (`apps/ai`, Python, added 2026-10-24)
 
-Local One Piece TCG **coach**: Ollama (`qwen3.5:9b`, runs inside WSL, `localhost:11434`) + direct read-only Postgres access + hand-written tool-calling loop. Independent of NestJS (not an npm workspace). Roadmap: env ✅ · local LLM ✅ · card data ✅ · **next: explore/parse SIM game logs** · analysis · FastAPI/NestJS integration · video. Full state, TODOs and gotchas: [[project-ai-service]]; working mode (user types commands and writes the code, Claude explains/reviews): [[feedback-user-runs-commands]].
+Local One Piece TCG **coach**: Ollama (`qwen3.5:9b`, runs inside WSL, `localhost:11434`) + direct read-only Postgres access + hand-written tool-calling loop. Independent of NestJS (not an npm workspace). Roadmap: env ✅ · local LLM ✅ · card data ✅ · **SIM log parser 🚧 (in progress, 2026-10-26)** · analysis · FastAPI/NestJS integration · video. Full state, next steps and gotchas: [[project-ai-service]]; log format reference: [[project-sim-log-format]]; working mode (user learns Python and writes the structuring code; Claude writes regexes/prompt text, explains, reviews): [[feedback-user-runs-commands]].
 
-- Layout: `pyproject.toml` · `.venv/` (gitignored) · `scripts/` (manual try-outs) · `src/rayway_ai/{cards/repository.py, llm/chat.py}`. Setup: `python3 -m venv .venv && source .venv/bin/activate && pip install -e .`. Env in `apps/ai/.env`: `DATABASE_URL` (role `rayway_ai`, **SELECT only**), `OLLAMA_URL`. Never print secrets.
+- Layout: `pyproject.toml` · `.venv/` (gitignored) · `scripts/` (manual try-outs) · `src/rayway_ai/{cards/repository.py, llm/chat.py + llm/rules.md, sim/{events.py, parser.py}}` · `data/` (**gitignored**: `rules/` official PDFs, `sim_logs/` 87 real logs with real player names). `llm/rules.md` = summary of Comprehensive Rules v1.2.1, injected in the system prompt.
+- Target architecture: `sim/` (parser → typed events) → `engine/` (replay/state) → `analysis/` (pure state→facts) → `llm/` (narrates facts) → `api/` later. The LLM never computes facts. Setup: `python3 -m venv .venv && source .venv/bin/activate && pip install -e .`. Env in `apps/ai/.env`: `DATABASE_URL` (role `rayway_ai`, **SELECT only**), `OLLAMA_URL`. Never print secrets.
 - Postgres runs in Docker Desktop on Windows (start the container first), reachable from WSL on `localhost:5432`.
 - ⚠️ Card data for the coach is **always English** + optional `name_fr`; the web "no EN fallback" rule applies to display only.
 - ⚠️ Prisma identifiers are quoted in SQL (`"Card"`, `"cardId"`). Enum-array columns need `::text[]` or psycopg returns `"{Red}"` strings.
 - ⚠️ The raw model hallucinates game rules (e.g. Leader "HP", "cannot be attacked"): rules/facts must come from tools or a deterministic engine, never from model memory.
+
+## graphify
+
+This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
+
+Rules:
+- When graphify-out/graph.json exists, run `graphify query "<question>"` before your first grep, search or source-file read for a codebase question, and put this rule in every subagent prompt that explores code. Read raw files only for lines the graph or an earlier read already located. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
+- If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
+- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
+- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
+- A committed graphify-out/graph.json is rewritten whole on every build, so a large diff to it in a pull request is expected. Do not flag it as churn or suggest skipping the graph rebuild or its hooks.
