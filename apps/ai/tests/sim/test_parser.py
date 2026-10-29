@@ -226,3 +226,89 @@ def test_a_whole_game_has_the_right_turns(tmp_path):
     assert [e.turn for e in events if isinstance(e, EndTurn)] == [1, 2, 3]
     assert events[-2] == Concede(line=18, turn=4, player="Alice#1")
     assert isinstance(events[-1], GameOver)
+
+
+# --- V1 additions: snapshots, Life, Attach, mulligan, misc -------------------
+
+import pytest
+from rayway_ai.sim import events as ev
+
+CASES = [
+    ("[Alice#1] Life: 4", ev.LifeCount(line=1, turn=0, player="Alice#1", count=4)),
+    ("[Alice#1] Hand: [OP15-061,ST10-010]", ev.ZoneSnapshot(line=1, turn=0, player="Alice#1", zone="Hand", cards=("OP15-061", "ST10-010"))),
+    ("[Alice#1] Board: []", ev.ZoneSnapshot(line=1, turn=0, player="Alice#1", zone="Board", cards=())),
+    ("[Alice#1] Zoro [OP15-113]: Add card to top of Life from Deck", ev.LifeAdded(line=1, turn=0, player="Alice#1", source_code="OP15-113", to_top=True, from_zone="Deck")),
+    ("[Alice#1] Pudding [OP17-109]: Activate Trigger", ev.TriggerActivated(line=1, turn=0, player="Alice#1", card_code="OP17-109")),
+    ("[Alice#1] Attach 2 Don to Kaido [OP17-058] (2 Total)", ev.DonAttached(line=1, turn=0, player="Alice#1", target_code="OP17-058", count=2, source_code=None, rested=False, total=2)),
+    ("[Alice#1] Enel [OP15-058]: Attach 1 Rested Don to Ohm [OP15-061]", ev.DonAttached(line=1, turn=0, player="Alice#1", target_code="OP15-061", count=1, source_code="OP15-058", rested=True, total=None)),
+    ("[Alice#1] Drew card from deck: Vista [OP16-011]", ev.CardDrawnFromDeck(line=1, turn=0, player="Alice#1", card_code="OP16-011")),
+    ("[Alice#1] Mulligan", ev.Mulligan(line=1, turn=0, player="Alice#1")),
+    ("[Alice#1] Hand before Mulligan: [A-1,B-2]", ev.HandBeforeMulligan(line=1, turn=0, player="Alice#1", cards=("A-1", "B-2"))),
+    ("[Alice#1] Brulee [ST34-003]: Reveal and Draw Katakuri [OP11-067]", ev.RevealAndDraw(line=1, turn=0, player="Alice#1", source_code="ST34-003", card_code="OP11-067")),
+    ("[Alice#1] Gamma Knife [OP13-075]: Rest 1 Don", ev.DonRested(line=1, turn=0, player="Alice#1", source_code="OP13-075", count=1)),
+    ("[Alice#1] Luffy [OP16-022]: Activate 1 Don", ev.DonActivated(line=1, turn=0, player="Alice#1", source_code="OP16-022", count=1)),
+    ("[Alice#1] Mamaragan [OP15-078]: Activate Counter", ev.CounterActivated(line=1, turn=0, player="Alice#1", card_code="OP15-078")),
+    ("[Alice#1] Trash Nami [OP01-016]", ev.CardTrashed(line=1, turn=0, player="Alice#1", card_code="OP01-016", source_code=None, from_zone=None)),
+    ("[Alice#1] Pudding [OP17-109]: Trash Atlas [EB05-050]", ev.CardTrashed(line=1, turn=0, player="Alice#1", card_code="EB05-050", source_code="OP17-109", from_zone=None)),
+    ("[Alice#1] Trash Sanji [OP17-082] from Life", ev.CardTrashed(line=1, turn=0, player="Alice#1", card_code="OP17-082", source_code=None, from_zone="Life")),
+    ("[Alice#1] Teach [OP09-081]: Doc Q [OP09-090] to Trash from Hand", ev.CardTrashed(line=1, turn=0, player="Alice#1", card_code="OP09-090", source_code="OP09-081", from_zone="Hand")),
+    ("[Alice#1] Saul [OP17-089]: Trash 2 Remaining Cards", ev.CardsTrashed(line=1, turn=0, player="Alice#1", source_code="OP17-089", count=2, from_zone=None)),
+    ("[Alice#1] Brook [OP15-022]: Trash 4 Cards from Deck", ev.CardsTrashed(line=1, turn=0, player="Alice#1", source_code="OP15-022", count=4, from_zone="Deck")),
+    ("[Alice#1] Katakuri [OP11-067]: Set Pudding [PRB02-010] to Active", ev.CardSetActive(line=1, turn=0, player="Alice#1", source_code="OP11-067", target_code="PRB02-010")),
+    ("[Alice#1] Tashigi [OP12-031]: Rest Katakuri [ST34-001]", ev.CardRested(line=1, turn=0, player="Alice#1", source_code="OP12-031", target_code="ST34-001")),
+    ("[Alice#1] Shanks [OP17-020]: Rest Don [Don]", ev.CardRested(line=1, turn=0, player="Alice#1", source_code="OP17-020", target_code="Don")),
+    ("[Alice#1] Dragon [OP15-077]: King [EB04-040] will not Activate during next Refresh", ev.RefreshSkipped(line=1, turn=0, player="Alice#1", source_code="OP15-077", target_code="EB04-040")),
+    ("[Alice#1] Pudding [OP08-058]: Flip 2 Life Face Up", ev.LifeFlippedFaceUp(line=1, turn=0, player="Alice#1", source_code="OP08-058", count=2)),
+    ("[Alice#1] Katakuri [OP11-062]: Looked at opponent's top deck", ev.TopDeckLooked(line=1, turn=0, player="Alice#1", source_code="OP11-062", finished=False)),
+    ("[Alice#1] Katakuri [OP11-062]: Finished looking at opponent's top deck", ev.TopDeckLooked(line=1, turn=0, player="Alice#1", source_code="OP11-062", finished=True)),
+    ("[Alice#1] Vista [OP16-011] revealed: Thatch [OP16-005]", ev.CardRevealed(line=1, turn=0, player="Alice#1", source_code="OP16-011", card_code="OP16-005")),
+    ("[Alice#1] Picked no cards to Draw", ev.NoCardPicked(line=1, turn=0, player="Alice#1")),
+    ("[Alice#1] Teach [OP09-081]: Added card to top of Life from Hand", ev.LifeAdded(line=1, turn=0, player="Alice#1", source_code="OP09-081", to_top=True, from_zone="Hand")),
+    ("[Alice#1] Shiryu [OP17-020]: Add Catarina [OP12-001] to top of Life", ev.LifeAdded(line=1, turn=0, player="Alice#1", source_code="OP17-020", to_top=True, from_zone=None, card_code="OP12-001")),
+    ("[Alice#1] Enel [OP15-118]: Added 1 Cards to Hand", ev.CardsAddedToHand(line=1, turn=0, player="Alice#1", source_code="OP15-118", count=1)),
+    ("[Alice#1] Draw El Thor [OP15-075] from Trash", ev.CardTakenFromTrash(line=1, turn=0, player="Alice#1", card_code="OP15-075")),
+    ("[Alice#1] Law [OP15-001]: Return Perona [OP13-010] to Hand", ev.CardReturnedToHand(line=1, turn=0, player="Alice#1", source_code="OP15-001", card_code="OP13-010")),
+    ("[Alice#1] Gloriosa [OP11-001]: Send Law [ST10-010] to Deck Bottom", ev.CardSentToDeckBottom(line=1, turn=0, player="Alice#1", source_code="OP11-001", card_code="ST10-010", from_zone=None)),
+    ("[Alice#1] Zoro [OP16-001]: Sent Saul [OP17-089] to Deck Bottom from Trash", ev.CardSentToDeckBottom(line=1, turn=0, player="Alice#1", source_code="OP16-001", card_code="OP17-089", from_zone="Trash")),
+    ("[Alice#1] Sent a Card to Deck Bottom", ev.CardSentToDeckBottom(line=1, turn=0, player="Alice#1", source_code=None, card_code=None, from_zone=None)),
+    ("[Alice#1] Placing Cards on Bottom of Deck", ev.CardsPlacedOnDeck(line=1, turn=0, player="Alice#1", bottom=True)),
+    ("[Alice#1] Placing Cards on Top of Deck", ev.CardsPlacedOnDeck(line=1, turn=0, player="Alice#1", bottom=False)),
+    ("[Alice#1] Zeus [OP03-001]: Takes Bottom Life", ev.LifeTaken(line=1, turn=0, player="Alice#1", source_code="OP03-001", top=False)),
+    ("[Alice#1] Linlin [OP17-112]: Send 1 Life to Hand", ev.LifeSentToHand(line=1, turn=0, player="Alice#1", source_code="OP17-112", count=1)),
+    ("[Alice#1] Banished 1 Life", ev.LifeLost(line=1, turn=0, player="Alice#1", count=1, banished=True)),
+    ("[Alice#1] Loses 2 Life", ev.LifeLost(line=1, turn=0, player="Alice#1", count=2, banished=False)),
+    ("[Alice#1] Hand after Mulligan: [A-1,B-2]", ev.HandAfterMulligan(line=1, turn=0, player="Alice#1", cards=("A-1", "B-2"))),
+    ('[Alice#1] Rakuyo [OP17-016]: Destroy Jango [OP15-026]', ev.DestroyEffect(line=1, turn=0, player="Alice#1", source_code="OP17-016", target_code="OP15-026")),
+    ('[Alice#1] Newgate [S-1]: Buff Bullet [T-2] -6000', ev.EffectApplied(line=1, turn=0, player="Alice#1", source_code="S-1", target_code="T-2", kind=ev.EffectKind.POWER, amount=-6000)),
+    ('[Alice#1] Bon Clay [S-1]: Buff Self 4000', ev.EffectApplied(line=1, turn=0, player="Alice#1", source_code="S-1", target_code=None, kind=ev.EffectKind.POWER, amount=4000, detail="Self")),
+    ("[Alice#1] Zoro [S-1]: Grant Roger [T-2] 2000 until opponent's next turn end", ev.EffectApplied(line=1, turn=0, player="Alice#1", source_code="S-1", target_code="T-2", kind=ev.EffectKind.POWER, amount=2000, duration="opponent's next turn end")),
+    ('[Alice#1] Law [S-1]: Grant Unblockable to Xebec [T-2]', ev.EffectApplied(line=1, turn=0, player="Alice#1", source_code="S-1", target_code="T-2", kind=ev.EffectKind.KEYWORD, detail="Unblockable")),
+    ('[Alice#1] Linlin [S-1]: Set Tashigi [T-2] Base Power to -7000', ev.EffectApplied(line=1, turn=0, player="Alice#1", source_code="S-1", target_code="T-2", kind=ev.EffectKind.BASE_POWER, amount=-7000)),
+    ("[Alice#1] Varie [S-1]: Holly [T-2] Cost 2 until Opponent's Turn End", ev.EffectApplied(line=1, turn=0, player="Alice#1", source_code="S-1", target_code="T-2", kind=ev.EffectKind.COST, amount=2, duration="Opponent's Turn End")),
+    ('[Alice#1] Ace [S-1]: Give Newgate [T-2] Rush', ev.EffectApplied(line=1, turn=0, player="Alice#1", source_code="S-1", target_code="T-2", kind=ev.EffectKind.KEYWORD, detail="Rush")),
+    ('[Alice#1] Buggy [S-1]: Prisoner [T-2] Gains Blocker', ev.EffectApplied(line=1, turn=0, player="Alice#1", source_code="S-1", target_code="T-2", kind=ev.EffectKind.KEYWORD, detail="Blocker")),
+    ('[Alice#1] Luffy [T-2] Gains Double Attack', ev.EffectApplied(line=1, turn=0, player="Alice#1", source_code=None, target_code="T-2", kind=ev.EffectKind.KEYWORD, detail="Double Attack")),
+    ("[Alice#1] Galdino [S-1]: Shiryu [T-2] can't attack next turn", ev.EffectApplied(line=1, turn=0, player="Alice#1", source_code="S-1", target_code="T-2", kind=ev.EffectKind.RESTRICTION, detail="can't attack next turn")),
+    ("[Alice#1] Teach [S-1]: Opponent can't activate On Play abilities next turn!", ev.EffectApplied(line=1, turn=0, player="Alice#1", source_code="S-1", target_code=None, kind=ev.EffectKind.RESTRICTION, detail="Opponent can't activate On Play abilities next turn!")),
+    ('[Alice#1] Teach [S-1]: Nullify effects of Luffy [T-2]', ev.EffectApplied(line=1, turn=0, player="Alice#1", source_code="S-1", target_code="T-2", kind=ev.EffectKind.RESTRICTION, detail="Nullify effects")),
+    ('[Alice#1] Shiryu [T-2] is no longer blocked from attacking', ev.EffectApplied(line=1, turn=0, player="Alice#1", source_code=None, target_code="T-2", kind=ev.EffectKind.RESTRICTION_LIFTED, detail="is no longer blocked from attacking")),
+    ('Luffy [T-2] cost restored', ev.EffectApplied(line=1, turn=0, player=None, source_code=None, target_code="T-2", kind=ev.EffectKind.RESTRICTION_LIFTED, detail="cost restored")),
+    ("[Alice#1] Doflamingo [OP14-060]: Target of Attack changed to Dellinger [OP14-067]", ev.AttackTargetChanged(line=1, turn=0, player="Alice#1", source_code="OP14-060", new_target_code="OP14-067")),
+    ("[Alice#1] Sanji [OP12-041]: Activates Stealth Black [EB04-041]", ev.CardActivated(line=1, turn=0, player="Alice#1", source_code="OP12-041", card_code="EB04-041")),
+    ("[Alice#1] Marco [OP16-014]: Prevent Effect To Rakuyo [OP17-016]", ev.EffectApplied(line=1, turn=0, player="Alice#1", source_code="OP16-014", target_code="OP17-016", kind=ev.EffectKind.RESTRICTION, detail="Prevent Effect")),
+    ("[Alice#1] Varie [OP15-074]: Buff Enel [OP15-058] 2000 for the Combat", ev.CombatPowerBuffed(line=1, turn=0, player="Alice#1", source_code="OP15-074", target_code="OP15-058", amount=2000)),
+]
+
+@pytest.mark.parametrize("text,expected", CASES)
+def test_v1_single_line(tmp_path, text, expected):
+    assert parse_text(tmp_path, text + "\n") == [expected]
+
+
+def test_counter_event_emits_a_combat_buff_then_a_turn_long_debuff(tmp_path):
+    # OP17-017: +2000 "during this battle", then -2000 "during this turn" (no suffix on the line).
+    events = parse_text(tmp_path, (
+        "[Alice#1] Ga Ha [OP17-017]: Buff Ace [OP16-001] 2000 for the Combat\n"
+        "[Alice#1] Ga Ha [OP17-017]: Buff Alvida [EB05-021] -2000\n"
+    ))
+    assert isinstance(events[0], ev.CombatPowerBuffed)
+    assert events[1].kind is ev.EffectKind.POWER and events[1].duration is None and events[1].amount == -2000
