@@ -20,6 +20,7 @@ COUNTER_DISCARD = re.compile(r"^\[(?P<player>[^\]]+)\] Discard (?P<name>.+?) \[(
 ATTACK_CLASH = re.compile(r"^(?P<attacker_name>.+?) \[(?P<attacker_code>[A-Z0-9-]+)\]\[(?P<attacker_power>-?\d+)\] vs (?P<target_name>.+?) \[(?P<target_code>[A-Z0-9-]+)\]\[(?P<target_power>-?\d+)\]$")
 ATTACK_FAILS = re.compile(r"^Attack Fails$")
 LEADER_HIT = re.compile(r"^(?P<name>.+?) \[(?P<code>[A-Z0-9-]+)\] hit for (?P<damage>\d+) damage$")
+DAMAGE_DEALT = re.compile(r"^\[(?P<player>[^\]]+)\] (?P<name>.+?) \[(?P<code>[A-Z0-9-]+)\]: Deals (?P<amount>\d+) damage$")
 DESTROYED = re.compile(r"^\[(?P<player>[^\]]+)\] (?P<name>.+?) \[(?P<code>[A-Z0-9-]+)\] Destroyed$")
 CONCEDE = re.compile(r"^\[(?P<player>[^\]]+)\] Concedes!$")
 GAME_OVER = re.compile(r"^GameOver$")

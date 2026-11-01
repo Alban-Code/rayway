@@ -1,7 +1,7 @@
 from rayway_ai.sim.events import (
     AttackClash, AttackDeclared, AttackFailed, BlockDeclared, CardDestroyed, Concede,
     CounterDiscarded, Deploy, DonGainEffect, DonMinus, DonPhase, Draw, EndTurn, GameOver,
-    LeaderDamaged, LeaderIs, TurnOrderChosen,
+    DamageDealt, LeaderDamaged, LeaderIs, TurnOrderChosen,
 )
 from rayway_ai.sim.parser import parse_log
 
@@ -72,6 +72,10 @@ def test_attack_failed(tmp_path):
 def test_leader_damaged_names_the_defending_leader(tmp_path):
     events = parse_text(tmp_path, "Jinbe [OP11-021] hit for 1 damage\n")
     assert events == [LeaderDamaged(line=1, turn=0, leader_code="OP11-021", damage=1)]
+
+def test_damage_dealt_names_the_effect_owner_not_the_victim(tmp_path):
+    events = parse_text(tmp_path, "[Alice#1] Nico Robin [EB03-055]: Deals 1 damage\n")
+    assert events == [DamageDealt(line=1, turn=0, player="Alice#1", source_code="EB03-055", amount=1)]
 
 def test_card_destroyed(tmp_path):
     events = parse_text(tmp_path, "[Bob#2] Monkey D. Luffy [ST30-012] Destroyed\n")

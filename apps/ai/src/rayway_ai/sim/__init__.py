@@ -1,1 +1,9 @@
-from .events import Event, TurnOrderChosen, EndTurn, LeaderIs, LifeCount, ZoneSnapshot
+from .events import (
+    EndTurn,
+    Event,
+    LeaderIs,
+    LifeAdded,
+    LifeCount,
+    TurnOrderChosen,
+    ZoneSnapshot,
+)

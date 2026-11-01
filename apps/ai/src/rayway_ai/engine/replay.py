@@ -10,7 +10,7 @@ def replay(events: list[Event]):
     states: list[GameState] = []
     divergences: list[Divergence] = []
     for event in events:
-        if isinstance(event, LifeCount) or isinstance(event, ZoneSnapshot):
+        if isinstance(event, (LifeCount, ZoneSnapshot)):
             state, divergence = consume_snapshot(state, event)
             states.append(state)
             if divergence is not None:

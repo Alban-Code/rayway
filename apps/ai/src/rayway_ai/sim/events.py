@@ -94,6 +94,15 @@ class LeaderDamaged(Event):
     damage: int
 
 @dataclass(frozen=True, kw_only=True)
+class DamageDealt(Event):
+    # "SRC: Deals N damage": an effect hits the opponent's Leader, possibly on the victim's own
+    # turn (e.g. an On K.O. effect). Unlike LeaderDamaged, the line names the effect's owner;
+    # the victim is the other player.
+    player: str # owner of the effect, not the victim
+    source_code: str
+    amount: int
+
+@dataclass(frozen=True, kw_only=True)
 class CardDestroyed(Event):
     # Also used outside combat (effects), so it is not tied to an attack.
     player: str # owner of the destroyed card
